@@ -6,6 +6,20 @@ echo   Desenvolvido por: Gleisson Santos - Embasa UMB
 echo ===================================================
 echo.
 
+:: Localizar interpretador Python do ecossistema
+set "PY_EXE="
+if exist "%~dp03 - Saneaia\venv\Scripts\python.exe" (
+    set "PY_EXE=%~dp03 - Saneaia\venv\Scripts\python.exe"
+) else if exist "%~dp03 - Saneaia\.venv\Scripts\python.exe" (
+    set "PY_EXE=%~dp03 - Saneaia\.venv\Scripts\python.exe"
+) else (
+    set "PY_EXE=python"
+)
+
+:: 0. Liberar portas que possam ter ficado presas por execuções anteriores (evita erro Errno 10048 / EADDRINUSE)
+"%PY_EXE%" "%~dp02 - extracao_pendencias\liberar_portas.py"
+echo.
+
 :: 1. Backend do GestaoUMB (Express + SQLite)
 echo [+] Iniciando GestaoUMB Backend (Express na porta 3001)...
 start "GestaoUMB - Backend (Express - Porta 3001)" /D "%~dp01 - gestoaumb" cmd /c "npm run server"
@@ -18,13 +32,7 @@ timeout /t 2 /nobreak >nul
 
 :: 3. Backend SaneaIA (FastAPI + ML/NLP)
 echo [+] Iniciando SaneaIA Backend (FastAPI na porta 8000)...
-if exist "%~dp03 - Saneaia\venv\Scripts\python.exe" (
-    start "SaneaIA - Backend (FastAPI - Porta 8000)" /D "%~dp03 - Saneaia" cmd /k "venv\Scripts\python.exe main.py"
-) else if exist "%~dp03 - Saneaia\.venv\Scripts\python.exe" (
-    start "SaneaIA - Backend (FastAPI - Porta 8000)" /D "%~dp03 - Saneaia" cmd /k ".venv\Scripts\python.exe main.py"
-) else (
-    start "SaneaIA - Backend (FastAPI - Porta 8000)" /D "%~dp03 - Saneaia" cmd /k "python main.py"
-)
+start "SaneaIA - Backend (FastAPI - Porta 8000)" /D "%~dp03 - Saneaia" cmd /k ""%PY_EXE%" main.py"
 timeout /t 2 /nobreak >nul
 
 :: 4. Webhook Recebimento Embasa (Python na porta 3002)
@@ -50,7 +58,9 @@ echo   [EXPURGO DE TESTES]
 echo   - No navegador: Clique em "EXPURGAR DADOS DE TESTE" no emulador.
 echo   - No terminal : Execute limpar-dados-teste.bat na raiz.
 echo.
-echo   Para encerrar os servicos, basta fechar as janelas do terminal.
+echo   [ENCERRAMENTO DE SERVICOS]
+echo   - Feche as janelas individuais do terminal, ou
+echo   - Execute stop-servers.bat na raiz para desligamento automatico.
 echo ===================================================
 echo.
 pause

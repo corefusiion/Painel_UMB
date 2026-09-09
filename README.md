@@ -190,6 +190,11 @@ O script iniciará automaticamente quatro terminais paralelos:
 3. **API SaneaIA (FastAPI):** `http://localhost:8000`
 4. **Webhook Receiver:** `http://localhost:3002` (também exposto em `http://localhost:8080/webhook`)
 
+Para desligar todos os serviços simultaneamente e liberar as portas de rede:
+```bat
+stop-servers.bat
+```
+
 ### Opção B: Inicialização Manual por Terminal
 
 | Serviço | Diretório | Comando de Execução | Porta | URL de Acesso |
