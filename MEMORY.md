@@ -1,6 +1,6 @@
 # MEMORY: Registro Histórico de Arquitetura e Evolução de Engenharia
 
-Este documento consolida o histórico evolutivo de engenharia de software e arquitetura de dados do ecossistema UMBMAS (Painel Operacional UMB & SaneaIA), detalhando decisões técnicas, refatorações de backend, modelos preditivos e marcos de integração.
+Este documento consolida o histórico evolutivo de engenharia de software e arquitetura de dados do ecossistema UMB (Painel Operacional UMB & SaneaIA), detalhando decisões técnicas, refatorações de backend, modelos preditivos e marcos de integração.
 
 **Autor e Engenheiro Responsável:** Gleisson Santos - Embasa UMB  
 **Organização:** EMBASA - Empresa Baiana de Águas e Saneamento S.A.  
@@ -8,7 +8,7 @@ Este documento consolida o histórico evolutivo de engenharia de software e arqu
 
 ---
 
-## 📝 Registro de Melhorias
+##  Registro de Melhorias
 
 #### [04/08/2026] - Iteração Inicial (Auditoria Base)
 **O que foi feito:**
@@ -48,8 +48,8 @@ Este documento consolida o histórico evolutivo de engenharia de software e arqu
   - **Pendentes Ativas:** **6 OSs** (0,1%)
 - **Tratamento do Serviço `37 - VISITA`:** Excluído o serviço `37 - VISITA` da contagem de "Principais Serviços Solicitados pelo Cliente", pois representa conversão interna de campo devido a impedimentos de acesso/inviabilidade (807 OSs), evidenciando os serviços primários reais dos clientes (ex: `364 - VERIF FALTA AGUA IMOVEL` com 6.643 OSs).
 - **Redesign do Encart NLP de Observações (`NlpObservacoesCard.tsx` & `3 - Saneaia/static/js/dashboard.js`):** Atualizado tanto no Painel de Gestão (React - Porta 8080) quanto no Painel Nativo do SaneaIA (Static JS - Porta 8000). Removidas todas as cores de fundo azul e verde, bem como bordas coloridas laterais (`border-left: 4px solid #3B82F6` e `#10B981`), adotando um visual 100% neutro e elegante. Foram separadas e rotuladas explicitamente duas seções com identificação inconfundível de período:
-  1. **📆 Análise Mensal — Mês Corrente (Agosto/2026: 01/08 a 31/08/2026)** -> Exibe o grid com os 5 indicadores específicos do mês: **12.2% Sentimento Negativo**, **4.7% Taxa Urgência**, **12 Solicitações Urgentes**, **21.2% Sentimento Positivo** e **29.0% Localização Extraída**.
-  2. **📅 Análise Anual — Acumulado do Ano (Ano 2026: 01/01 a 31/12/2026)** -> Exibe o grid com os 5 indicadores específicos do ano: **9.3% Sentimento Negativo**, **3.3% Taxa Urgência**, **241 Solicitações Urgentes**, **19.7% Sentimento Positivo** e **16.3% Localização Extraída**, além das categorias técnicas.
+  1. **Análise Mensal — Mês Corrente (Agosto/2026: 01/08 a 31/08/2026)** -> Exibe o grid com os 5 indicadores específicos do mês: **12.2% Sentimento Negativo**, **4.7% Taxa Urgência**, **12 Solicitações Urgentes**, **21.2% Sentimento Positivo** e **29.0% Localização Extraída**.
+  2. **Análise Anual — Acumulado do Ano (Ano 2026: 01/01 a 31/12/2026)** -> Exibe o grid com os 5 indicadores específicos do ano: **9.3% Sentimento Negativo**, **3.3% Taxa Urgência**, **241 Solicitações Urgentes**, **19.7% Sentimento Positivo** e **16.3% Localização Extraída**, além das categorias técnicas.
 
 ### [14/08/2026] - Conclusão do Chat IA Inteligente (Text-to-SQL) (Pasta 3)
 **O que foi feito:**
@@ -149,19 +149,18 @@ Este documento consolida o histórico evolutivo de engenharia de software e arqu
 
 ### [18/08/2026] - Integração Webhook para Alimentação Direta (Embasa Views)
 **O que foi feito:**
-- **Manual de Especificações de Integração:** Criada a pasta [`docs_integracao/`](file:///C:/Users/t034183/Desktop/UMBMAS/docs_integracao/) e o documento [`manual_integracao_embasa.md`](file:///C:/Users/t034183/Desktop/UMBMAS/docs_integracao/manual_integracao_embasa.md) em Markdown técnico limpo (sem emojis ou excesso de negritos) descrevendo o mapeamento das 14 colunas fundamentais (incluindo Localidade, Obs da SS, Obs de Enc da OS e Unid Atual), formato das chaves (JSON/CSV), filtros recomendados na view SQL e exemplos de payloads.
-- **Script Webhook Listener com Carga Dupla:** Criado o script [`listener_recebimento.py`](file:///C:/Users/t034183/Desktop/UMBMAS/2%20-%20extracao_pendencias/listener_recebimento.py) em Python (Porta 3002) rodando um servidor HTTP que escuta pushes da Embasa e realiza carga dupla:
+- **Script Webhook Listener com Carga Dupla:** Criado o script [`listener_recebimento.py`](extracao_pendencias/listener_recebimento.py) em Python (Porta 3002) rodando um servidor HTTP que escuta pushes da Embasa e realiza carga dupla:
   1. Primeiro, insere TODOS os registros e serviços brutos diretamente na tabela `solicitacoes` do banco SQLite do Projeto 3 (`saneaia.db`).
   2. Segundo, separa e classifica os registros em 5 blocos operacionais, encaminhando para as tabelas do banco SQLite do Projeto 1 (`database.sqlite`).
 - **Desambiguação de Cabeçalhos de Observações:** Atualizados os mapeamentos de cabeçalhos no backend Express (`server.ts`) e no webhook Python (`listener_recebimento.py`) para diferenciar corretamente `Obs da SS` (salvo em `especificacao`) de `Obs de Enc da OS` (salvo em `observacao`), prevenindo conflito de strings.
 - **Recálculo de Insights Inteligentes:** O script Webhook aciona automaticamente o recálculo preditivo de IA e NLP no SaneaIA FastAPI e sincroniza as novas conclusões com o banco de dados do Dashboard sempre que novos dados de falta d'água são injetados.
-- **Integração no Script de Inicialização Mestre:** Atualizado o script [`start-servers.bat`](file:///C:/Users/t034183/Desktop/UMBMAS/start-servers.bat) na raiz para inicializar concorrentemente o Webhook Receiver em uma quarta janela do terminal CMD, garantindo que o ecossistema local esteja sempre pronto para receber dados da Embasa.
-- **Governança de Agente:** Atualizado [`AGENTS.md`](file:///C:/Users/t034183/Desktop/UMBMAS/AGENTS.md) registrando a porta 3002 e a funcionalidade do Webhook.
+- **Integração no Script de Inicialização Mestre:** Atualizado o script [`start-servers.bat`](/UMBMAS/start-servers.bat) na raiz para inicializar concorrentemente o Webhook Receiver em uma quarta janela do terminal CMD, garantindo que o ecossistema local esteja sempre pronto para receber dados da Embasa.
+- **Governança de Agente:** Atualizado [`AGENTS.md`](/UMBMAS/AGENTS.md) registrando a porta 3002 e a funcionalidade do Webhook.
 
 ### [19/08/2026] - Desativação Temporária da Tela de Login
 **O que foi feito:**
-- **Bypass de Autenticação:** Refatorado o hook [`useAuth.ts`](file:///C:/Users/t034183/Desktop/UMBMAS/1%20-%20gestoaumb/src/hooks/useAuth.ts) no frontend do Projeto 1 para sempre carregar uma sessão mockada ativa (`{ user: { id: '1' } }`) imediatamente ao montar o componente. Isso faz com que qualquer novo computador ou aba acesse diretamente o Dashboard (Home) sem exigir preenchimento das credenciais de acesso, sem precisar apagar a página de login original.
-- **Refatoração do Modal de Importação Frontend:** Refatorado o componente [`ImportDataModal.tsx`](file:///C:/Users/t034183/Desktop/UMBMAS/1%20-%20gestoaumb/src/components/dashboard/ImportDataModal.tsx) para enviar os arquivos CSV carregados na interface diretamente ao endpoint `/api/import-csv` do backend via `FormData` (POST). Isso substitui o parser cliente do React (que estava quebrado e gerava requisições sem efeito) pelo motor unificado e robusto de importação do servidor SQLite.
+- **Bypass de Autenticação:** Refatorado o hook [`useAuth.ts`](gestoaumb/src/hooks/useAuth.ts) no frontend do Projeto 1 para sempre carregar uma sessão mockada ativa (`{ user: { id: '1' } }`) imediatamente ao montar o componente. Isso faz com que qualquer novo computador ou aba acesse diretamente o Dashboard (Home) sem exigir preenchimento das credenciais de acesso, sem precisar apagar a página de login original.
+- **Refatoração do Modal de Importação Frontend:** Refatorado o componente [`ImportDataModal.tsx`](UMBMAS/1%20-%20gestoaumb/src/components/dashboard/ImportDataModal.tsx) para enviar os arquivos CSV carregados na interface diretamente ao endpoint `/api/import-csv` do backend via `FormData` (POST). Isso substitui o parser cliente do React (que estava quebrado e gerava requisições sem efeito) pelo motor unificado e robusto de importação do servidor SQLite.
 - **Resolução de Shift de Colunas e Remoção de Fallbacks Posicionais:** Identificado que no CSV real de pendências (13 colunas), os acentos das colunas de cabeçalho (como *"Serviço"* e *"Especificação"*) são removidos pelo sistema na exportação, resultando em cabeçalhos de texto como `"Servio"` e `"Especificao"`. Isso quebrava o mapeador do backend e ativava fallbacks posicionais redundantes baseados no tamanho do cabeçalho que erroneamente vinculavam o `logradouro` (índice 8) ao campo `observacao`. Removemos todos os fallbacks por índice do arquivo [`server.ts`](file:///C:/Users/t034183/Desktop/UMBMAS/1%20-%20gestoaumb/backend/server.ts), aprimoramos o mapeador por regex/nome para suportar a ausência de acentos (`servi`, `especifica`, `matri`) e implementamos um fallback lógico para que `observacao` herde `especificacao` se a primeira estiver ausente no CSV de entrada.
 
 ### [09/09/2026] - Blindagem de Webhook, Expurgo Seguro, Logs RUM e Preparação para Nuvem Corporativa
