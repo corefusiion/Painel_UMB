@@ -2861,6 +2861,8 @@ async function loadWeatherAnalytics(ano = '2026') {
 // ============================================================
 // 2. PRIORIZAÇÃO HUMANIZADA DE IMÓVEIS SENSÍVEIS
 // ============================================================
+let imoveisSensiveisCache = [];
+
 async function loadImoveisSensiveis(ano) {
     const curAno = (ano !== undefined && ano !== null && ano !== '') ? ano : (globalYearFilter || '2026');
     const badgePeriodo = document.getElementById('badge-sensivel-periodo');
@@ -2869,6 +2871,8 @@ async function loadImoveisSensiveis(ano) {
     }
     const res = await api(`/api/analytics/imoveis-sensiveis?ano=${encodeURIComponent(curAno)}`);
     if (!res) return;
+
+    imoveisSensiveisCache = res.itens || [];
 
     const kpiSaude = document.getElementById('kpi-sensivel-saude');
     const kpiEduc = document.getElementById('kpi-sensivel-educ');
@@ -2880,49 +2884,128 @@ async function loadImoveisSensiveis(ano) {
     if (kpiSocial) kpiSocial.textContent = res.distribuicao_categoria?.['Social / Idosos'] || 0;
     if (badgePipa) badgePipa.textContent = `🚨 ${res.sugestoes_pipa || 0} Carros Pipa Preventivos Sugeridos`;
 
+    // Atualizar os contadores dinâmicos no filtro de status
+    updateSensivelStatusOptions(imoveisSensiveisCache);
+
+    const statusFilterEl = document.getElementById('filter-sensivel-status');
+    const currentStatus = statusFilterEl ? statusFilterEl.value : 'Todos';
+    renderImoveisSensiveisTable(currentStatus);
+}
+
+function updateSensivelStatusOptions(items) {
+    const select = document.getElementById('filter-sensivel-status');
+    if (!select) return;
+
+    const currentVal = select.value || 'Todos';
+    const total = items.length;
+    let abertas = 0;
+    let programadas = 0;
+    let executadas = 0;
+    let naoExecutadas = 0;
+
+    items.forEach(it => {
+        const s = (it.status || it.situacao || '').toUpperCase();
+        if (s.includes('NÃO EXECUTAD') || s.includes('NAO EXECUTAD') || s.includes('CANCELAD')) {
+            naoExecutadas++;
+        } else if (s.includes('EXECUTAD')) {
+            executadas++;
+        } else if (s.includes('PROGRAMAD')) {
+            programadas++;
+        } else if (s.includes('ABERT') || s.includes('PENDENTE')) {
+            abertas++;
+        }
+    });
+
+    select.innerHTML = `
+        <option value="Todos"${currentVal === 'Todos' ? ' selected' : ''}>Todos os Status (${total})</option>
+        <option value="Aberta"${currentVal === 'Aberta' ? ' selected' : ''}>Aberta (${abertas})</option>
+        <option value="Programada"${currentVal === 'Programada' ? ' selected' : ''}>Programada (${programadas})</option>
+        <option value="Executada"${currentVal === 'Executada' ? ' selected' : ''}>Executada (${executadas})</option>
+        <option value="Não Executada"${currentVal === 'Não Executada' ? ' selected' : ''}>Concluída Não Executada (${naoExecutadas})</option>
+    `;
+}
+
+function filterImoveisSensiveisByStatus(statusVal) {
+    renderImoveisSensiveisTable(statusVal);
+}
+
+function renderImoveisSensiveisTable(statusFilter = 'Todos') {
     const tbody = document.getElementById('tbody-imoveis-sensiveis');
-    if (tbody && res.itens) {
-        if (res.itens.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="padding: 16px; text-align: center; color: var(--text-muted);">Nenhum imóvel sensível com ocorrência no período.</td></tr>`;
-            return;
+    if (!tbody) return;
+
+    let items = imoveisSensiveisCache;
+    if (statusFilter && statusFilter !== 'Todos') {
+        items = items.filter(it => {
+            const s = (it.status || it.situacao || '').toUpperCase();
+            if (statusFilter === 'Aberta') return s.includes('ABERT') || s.includes('PENDENTE');
+            if (statusFilter === 'Programada') return s.includes('PROGRAMAD');
+            if (statusFilter === 'Executada') return s.includes('EXECUTAD') && !s.includes('NÃO') && !s.includes('NAO');
+            if (statusFilter === 'Não Executada') return s.includes('NÃO EXECUTAD') || s.includes('NAO EXECUTAD') || s.includes('CANCELAD');
+            return true;
+        });
+    }
+
+    if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 0.82rem;">Nenhum imóvel sensível encontrado com o status "<strong>${escapeHtml(statusFilter)}</strong>".</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = items.map(item => {
+        const catBadge = `<span style="background: ${item.cor}18; color: ${item.cor}; border: 1px solid ${item.cor}40; padding: 3px 8px; border-radius: 6px; font-weight: 600; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
+            <i data-lucide="${item.icone}" style="width: 12px; height: 12px;"></i> ${item.categoria.split('(')[0].trim()}
+        </span>`;
+
+        let acaoColor = item.prioridade === 'Emergencial' ? '#DC2626' : (item.prioridade === 'Alta' ? '#D97706' : '#059669');
+        let acaoBg = item.prioridade === 'Emergencial' ? '#FEE2E2' : (item.prioridade === 'Alta' ? '#FEF3C7' : '#D1FAE5');
+
+        const acaoBadge = `<span style="background: ${acaoBg}; color: ${acaoColor}; font-weight: 700; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; display: inline-block; white-space: nowrap;">
+            ${item.acao_recomendada}
+        </span>`;
+
+        // Badge estilizado e profissional para o Status da OS
+        const s = (item.status || item.situacao || '').toUpperCase();
+        let statusBadge = '';
+        if (s.includes('NÃO EXECUTAD') || s.includes('NAO EXECUTAD')) {
+            statusBadge = `<span style="background: #FEE2E2; color: #B91C1C; border: 1px solid #FECACA; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #DC2626; flex-shrink: 0;"></span> Não Executada</span>`;
+        } else if (s.includes('EXECUTAD')) {
+            statusBadge = `<span style="background: #D1FAE5; color: #047857; border: 1px solid #A7F3D0; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #059669; flex-shrink: 0;"></span> Executada</span>`;
+        } else if (s.includes('PROGRAMAD')) {
+            statusBadge = `<span style="background: #DBEAFE; color: #1D4ED8; border: 1px solid #BFDBFE; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #2563EB; flex-shrink: 0;"></span> Programada</span>`;
+        } else if (s.includes('ABERT') || s.includes('PENDENTE')) {
+            statusBadge = `<span style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #D97706; flex-shrink: 0;"></span> Aberta</span>`;
+        } else if (s.includes('CANCELAD')) {
+            statusBadge = `<span style="background: #F1F5F9; color: #64748B; border: 1px solid #E2E8F0; padding: 3px 8px; border-radius: 4px; font-weight: 600; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #94A3B8; flex-shrink: 0;"></span> Cancelada</span>`;
+        } else {
+            statusBadge = `<span style="background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; padding: 3px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; white-space: nowrap;">${item.status || item.situacao || 'Indefinido'}</span>`;
         }
 
-        tbody.innerHTML = res.itens.map(item => {
-            const catBadge = `<span style="background: ${item.cor}18; color: ${item.cor}; border: 1px solid ${item.cor}40; padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px;">
-                <i data-lucide="${item.icone}" style="width: 12px; height: 12px;"></i> ${item.categoria.split('(')[0].trim()}
-            </span>`;
+        const dataStr = item.data_abertura || item.data_registro || '--';
 
-            let acaoColor = item.prioridade === 'Emergencial' ? '#DC2626' : (item.prioridade === 'Alta' ? '#D97706' : '#10B981');
-            let acaoBg = item.prioridade === 'Emergencial' ? '#FEE2E2' : (item.prioridade === 'Alta' ? '#FEF3C7' : '#D1FAE5');
-
-            const acaoBadge = `<span style="background: ${acaoBg}; color: ${acaoColor}; font-weight: 700; font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; display: inline-block;">
-                ${item.acao_recomendada}
-            </span>`;
-
-            const sitBadge = item.is_active 
-                ? `<span style="background: #FEF3C7; color: #B45309; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 0.72rem;">Aberta/Prog.</span>`
-                : `<span style="background: #F1F5F9; color: #475569; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem;">Concluída</span>`;
-
-            return `
-                <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
-                    <td style="padding: 8px 12px; font-weight: 700; color: var(--text-color);">
-                        ${item.ss}
-                        <div style="font-weight: 400; font-size: 0.72rem; color: var(--text-muted);">Matr: ${item.matricula}</div>
-                    </td>
-                    <td style="padding: 8px 12px;">${catBadge}</td>
-                    <td style="padding: 8px 12px;">
-                        <div style="font-weight: 600; color: var(--text-color);">${item.bairro}</div>
-                        <div style="font-size: 0.74rem; color: var(--text-muted);">${item.logradouro}</div>
-                    </td>
-                    <td style="padding: 8px 12px;">${sitBadge}</td>
-                    <td style="padding: 8px 12px;">${acaoBadge}</td>
-                    <td style="padding: 8px 12px; color: var(--text-muted); font-size: 0.75rem; max-width: 250px; white-space: normal;">
-                        ${item.observacao || '--'}
-                    </td>
-                </tr>
-            `;
-        }).join('');
-    }
+        return `
+            <tr style="border-bottom: 1px solid var(--border-color); transition: background 0.15s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='transparent'">
+                <td style="padding: 8px 12px; font-weight: 700; color: var(--text-color); white-space: nowrap;">
+                    ${item.ss}
+                    <div style="font-weight: 400; font-size: 0.72rem; color: var(--text-muted);">Matr: ${item.matricula}</div>
+                </td>
+                <td style="padding: 8px 12px; white-space: nowrap;">
+                    <div style="font-weight: 600; font-size: 0.76rem; color: var(--text-color); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;">
+                        <i data-lucide="calendar" style="width: 12px; height: 12px; color: var(--text-muted); vertical-align: middle; margin-right: 3px;"></i>
+                        ${dataStr}
+                    </div>
+                </td>
+                <td style="padding: 8px 12px; white-space: nowrap;">${statusBadge}</td>
+                <td style="padding: 8px 12px; white-space: nowrap;">${catBadge}</td>
+                <td style="padding: 8px 12px;">
+                    <div style="font-weight: 600; color: var(--text-color);">${item.bairro}</div>
+                    <div style="font-size: 0.74rem; color: var(--text-muted);">${item.logradouro}</div>
+                </td>
+                <td style="padding: 8px 12px; white-space: nowrap;">${acaoBadge}</td>
+                <td style="padding: 8px 12px; color: var(--text-muted); font-size: 0.75rem; max-width: 250px; white-space: normal;">
+                    ${item.observacao || '--'}
+                </td>
+            </tr>
+        `;
+    }).join('');
 
     if (window.lucide) lucide.createIcons();
 }

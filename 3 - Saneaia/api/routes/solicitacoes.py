@@ -1597,13 +1597,35 @@ def get_weather_analytics(ano: Optional[str] = "2026"):
 
 # 2. PRIORIZAÇÃO HUMANIZADA DE IMÓVEIS SENSÍVEIS (SAÚDE, EDUCAÇÃO, SOCIAL)
 @router.get("/analytics/imoveis-sensiveis")
-def get_imoveis_sensiveis(ano: Optional[str] = None):
+def get_imoveis_sensiveis(ano: Optional[str] = None, status: Optional[str] = None):
     """
     Rastreia ocorrências em instituições de uso prioritário:
     Hospitais, UPAs, Postos de Saúde, Escolas, Creches e Asilos.
-    Filtrado por ano quando especificado.
+    Filtrado por ano e status quando especificado.
     """
     import re
+    from datetime import datetime
+
+    def format_date_br_dt(d_str):
+        if not d_str:
+            return ""
+        d_str = str(d_str).strip()
+        if re.match(r'^\d{2}/\d{2}/\d{4}', d_str):
+            parts = d_str.split()
+            if len(parts) >= 2:
+                return f"{parts[0]} {parts[1][:5]}"
+            return d_str
+        try:
+            val = d_str.replace("Z", "+00:00")
+            if "." in val:
+                val = val.split(".")[0]
+            if "+" in val:
+                val = val.split("+")[0]
+            dt = datetime.fromisoformat(val)
+            return dt.strftime('%d/%m/%Y %H:%M')
+        except Exception:
+            return d_str
+
     conn = get_saneaia_sqlite_conn()
     cur = conn.cursor()
     
@@ -1636,7 +1658,7 @@ def get_imoveis_sensiveis(ano: Optional[str] = None):
     FROM solicitacoes_analise
     {where_clause}
     ORDER BY id DESC
-    LIMIT 250
+    LIMIT 300
     """
     cur.execute(query, params)
     rows = cur.fetchall()
@@ -1673,8 +1695,28 @@ def get_imoveis_sensiveis(ano: Optional[str] = None):
         else:
             continue
             
-        sit_clean = sit if sit else "Concluída Executada"
-        is_active = any(s in sit_clean.upper() for s in ["ABERTA", "PROGRAMADA", "PENDENTE"])
+        sit_raw = str(sit or "").strip()
+        sit_upper = sit_raw.upper()
+        if "NÃO EXECUTAD" in sit_upper or "NAO EXECUTAD" in sit_upper:
+            status_norm = "Concluída Não Executada"
+            status_grupo = "Não Executada"
+        elif "EXECUTAD" in sit_upper:
+            status_norm = "Concluída Executada"
+            status_grupo = "Executada"
+        elif "PROGRAMAD" in sit_upper:
+            status_norm = "Programada"
+            status_grupo = "Programada"
+        elif "ABERT" in sit_upper:
+            status_norm = "Aberta"
+            status_grupo = "Aberta"
+        elif "CANCELAD" in sit_upper:
+            status_norm = "Cancelada"
+            status_grupo = "Cancelada"
+        else:
+            status_norm = sit_raw if sit_raw else "Concluída Executada"
+            status_grupo = "Executada"
+
+        is_active = status_grupo in ["Aberta", "Programada"] or any(s in sit_upper for s in ["ABERTA", "PROGRAMADA", "PENDENTE"])
         if is_active:
             chamados_ativos += 1
             
@@ -1697,6 +1739,8 @@ def get_imoveis_sensiveis(ano: Optional[str] = None):
         if len(obs_text) > 100:
             obs_text = obs_text[:97] + "..."
             
+        data_abertura_fmt = format_date_br_dt(d_tram) or format_date_br_dt(d_enc) or ""
+
         items.append({
             "ss": ss,
             "matricula": matr or "N/A",
@@ -1705,21 +1749,55 @@ def get_imoveis_sensiveis(ano: Optional[str] = None):
             "cor": cor_badge,
             "bairro": b_clean,
             "logradouro": logr_clean,
-            "situacao": sit_clean,
+            "situacao": status_norm,
+            "status": status_norm,
+            "status_grupo": status_grupo,
+            "data_abertura": data_abertura_fmt,
+            "data_registro": data_abertura_fmt,
             "is_active": is_active,
             "prioridade": prioridade,
             "acao_recomendada": acao,
             "observacao": obs_text,
-            "data_registro": d_tram or d_enc or ""
         })
         
+    filtered_items = items
+    if status and str(status).strip() != "Todos":
+        st_query = str(status).strip().lower()
+        if "não" in st_query or "nao" in st_query:
+            filtered_items = [
+                it for it in items 
+                if "não" in it["status"].lower() or "nao" in it["status"].lower() or "cancelada" in it["status"].lower()
+            ]
+        elif "executada" in st_query:
+            filtered_items = [
+                it for it in items 
+                if ("executada" in it["status"].lower() or "executada" in it["status_grupo"].lower())
+                and "não" not in it["status"].lower() and "nao" not in it["status"].lower()
+            ]
+        elif "programada" in st_query:
+            filtered_items = [
+                it for it in items 
+                if "programada" in it["status"].lower() or "programada" in it["status_grupo"].lower()
+            ]
+        elif "aberta" in st_query:
+            filtered_items = [
+                it for it in items 
+                if "aberta" in it["status"].lower() or "pendente" in it["status"].lower()
+            ]
+        else:
+            filtered_items = [
+                it for it in items 
+                if st_query in it["status"].lower() or st_query in it["status_grupo"].lower()
+            ]
+
     return {
         "ano": ano if ano else "Todos",
-        "total_sensiveis": len(items),
+        "status_filtro": status or "Todos",
+        "total_sensiveis": len(filtered_items),
         "chamados_ativos": chamados_ativos,
         "sugestoes_pipa": sugestoes_pipa,
         "distribuicao_categoria": counts_cat,
-        "itens": items[:50]
+        "itens": filtered_items[:150]
     }
 
 

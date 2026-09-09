@@ -344,8 +344,19 @@
                         </h3>
                         <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">Rastreamento contínuo de hospitais, postos de saúde, escolas, creches e asilos com sugestão de abastecimento alternativo.</p>
                     </div>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <span id="badge-pipa-count" class="badge-tag" style="background: #FEE2E2; color: #991B1B; font-weight: 700; font-size: 0.78rem; padding: 5px 12px; border-radius: 9999px;">
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <div style="display: inline-flex; align-items: center; gap: 6px; background: var(--bg-card); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                            <i data-lucide="filter" style="width: 13px; height: 13px; color: var(--text-muted);"></i>
+                            <label for="filter-sensivel-status" style="font-size: 0.76rem; font-weight: 600; color: var(--text-muted); margin: 0;">Filtrar Status:</label>
+                            <select id="filter-sensivel-status" onchange="filterImoveisSensiveisByStatus(this.value)" style="font-size: 0.76rem; font-weight: 700; color: var(--text-color); background: transparent; border: none; outline: none; cursor: pointer; padding: 2px 4px;">
+                                <option value="Todos">Todos os Status</option>
+                                <option value="Aberta">Aberta</option>
+                                <option value="Programada">Programada</option>
+                                <option value="Executada">Executada</option>
+                                <option value="Não Executada">Concluída Não Executada</option>
+                            </select>
+                        </div>
+                        <span id="badge-pipa-count" class="badge-tag" style="background: #FEE2E2; color: #991B1B; font-weight: 700; font-size: 0.78rem; padding: 5px 12px; border-radius: 9999px; display: inline-flex; align-items: center; gap: 4px;">
                             🚨 Carro Pipa Preventivo Sugerido
                         </span>
                     </div>
@@ -383,20 +394,21 @@
                 </div>
 
                 <!-- Tabela das Ocorrências Sensíveis -->
-                <div style="max-height: 260px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+                <div style="max-height: 320px; overflow-y: auto; overflow-x: auto; border: 1px solid var(--border-color); border-radius: 8px;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;" id="table-imoveis-sensiveis">
-                        <thead style="background: var(--bg-card); position: sticky; top: 0; border-bottom: 1px solid var(--border-color);">
+                        <thead style="background: var(--bg-card); position: sticky; top: 0; border-bottom: 1px solid var(--border-color); z-index: 2;">
                             <tr>
-                                <th style="padding: 8px 12px; text-align: left;">SS / Matrícula</th>
-                                <th style="padding: 8px 12px; text-align: left;">Categoria</th>
+                                <th style="padding: 8px 12px; text-align: left; white-space: nowrap;">SS / Matrícula</th>
+                                <th style="padding: 8px 12px; text-align: left; white-space: nowrap;">Data Abertura</th>
+                                <th style="padding: 8px 12px; text-align: left; white-space: nowrap;">Status</th>
+                                <th style="padding: 8px 12px; text-align: left; white-space: nowrap;">Categoria</th>
                                 <th style="padding: 8px 12px; text-align: left;">Bairro & Logradouro</th>
-                                <th style="padding: 8px 12px; text-align: left;">Situação</th>
-                                <th style="padding: 8px 12px; text-align: left;">Ação Recomendada</th>
+                                <th style="padding: 8px 12px; text-align: left; white-space: nowrap;">Ação Recomendada</th>
                                 <th style="padding: 8px 12px; text-align: left;">Observação da Demanda</th>
                             </tr>
                         </thead>
                         <tbody id="tbody-imoveis-sensiveis">
-                            <tr><td colspan="6" style="padding: 16px; text-align: center; color: var(--text-muted);">Carregando instituições sensíveis...</td></tr>
+                            <tr><td colspan="7" style="padding: 16px; text-align: center; color: var(--text-muted);">Carregando instituições sensíveis...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1513,7 +1525,7 @@
     <script>
         lucide.createIcons();
     </script>
-    <script src="/static/js/dashboard.js?v=58"></script>
+    <script src="/static/js/dashboard.js?v=60"></script>
 </body>
 
 </html>
