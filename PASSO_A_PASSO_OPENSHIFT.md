@@ -86,7 +86,7 @@ O OpenShift vai te mostrar as duas URLs geradas:
 
 ---
 
-## 📡 6. Como Conectar a Mensageria do SCI ao Webhook
+## 6. Como Conectar a Mensageria do SCI ao Webhook
 
 Agora só falta apontar a mensageria do SCI Web de teste (`integracao-sci-digiteam`) para o nosso Webhook receber o JSON das pendências. 
 

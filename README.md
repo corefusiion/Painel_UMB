@@ -206,6 +206,53 @@ stop-servers.bat
 | **SaneaIA Engine** | `3 - Saneaia` | `venv\Scripts\python.exe main.py` | **8000** | [http://localhost:8000](http://localhost:8000) |
 | **Webhook Receiver** | `2 - extracao_pendencias` | `python listener_recebimento.py` | **3002** | [http://localhost:3002/webhook](http://localhost:3002/webhook) |
 
+### Opção C: Implantação Rápida no Red Hat OpenShift (Cluster Embasa)
+
+Para a equipe de TI da Embasa implantar o ecossistema no cluster OpenShift (**OCP**) em poucos minutos:
+
+#### 1. Clonar o Repositório e Selecionar o Namespace
+```bash
+git clone https://github.com/corefusiion/Painel_UMB.git
+cd Painel_UMB
+oc project <seu-namespace>
+```
+
+#### 2. Compilar as Imagens no Registro Interno do Cluster
+```bash
+# 1. Painel de Gestão (Node.js + React)
+oc new-build --name gestao-app --binary --strategy docker
+oc start-build gestao-app --from-dir="./1 - gestoaumb" --follow
+
+# 2. SaneaIA (FastAPI + Machine Learning)
+oc new-build --name saneaia-app --binary --strategy docker
+oc start-build saneaia-app --from-dir="./3 - Saneaia" --follow
+
+# 3. Receptor de Webhook (Python)
+oc new-build --name webhook-app --binary --strategy docker
+oc start-build webhook-app --from-dir="./2 - extracao_pendencias" --follow
+```
+
+#### 3. Aplicar os Manifestos em 1 Comando
+```bash
+oc apply -f openshift/
+```
+*O OpenShift provisionará automaticamente o volume de 10GB (`painel-umb-storage`), ConfigMap, Pods, Services e Rotas públicas.*
+
+#### 4. Obter as URLs de Acesso aos Dashboards
+```bash
+oc get routes
+```
+*O comando exibirá na tela as duas URLs geradas automaticamente:*
+* **Painel Gerencial (Projeto 1):** Rota `painel-umb-route`
+* **Central de IA SaneaIA (Projeto 3):** Rota `saneaia-route`
+
+#### 5. Conectar a Mensageria do SCI ao Webhook
+Na mensageria do SCI Web de teste (`integracao-sci-digiteam`), aponte o envio do JSON de pendências para:
+* **Comunicação Interna no Cluster (Recomendada):** `http://webhook-service:3002/webhook`
+* **Comunicação Externa via Rota:** `http://<url-gerada-da-painel-umb-route>/webhook`
+
+> 📖 Para o manual detalhado com o escopo de cada fase, consulte **[`PASSO_A_PASSO_OPENSHIFT.md`](PASSO_A_PASSO_OPENSHIFT.md)**.
+
 ---
 
 <div align="center">
