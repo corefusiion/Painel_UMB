@@ -3,3 +3,5 @@ webdriver-manager
 requests
 python-dotenv
 pandas
+beautifulsoup4
+openpyxl
