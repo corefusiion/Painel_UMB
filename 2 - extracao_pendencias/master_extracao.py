@@ -49,9 +49,11 @@ def print_banner():
 def reprocessar_analise_preditiva():
     """Dispara a Análise Preditiva no Saneaia FastAPI e atualiza o Painel UMB."""
     print("\n[FASE 3/3] 🧠 Disparando recálculo da Análise Preditiva (IA Saneaia)...")
+    gestao_url = os.getenv("GESTAO_URL", "http://localhost:3001").rstrip("/")
+    saneaia_url = os.getenv("SANEAIA_URL", "http://localhost:8000").rstrip("/")
     try:
         # 1. Buscar demandas em aberto do Projeto 1
-        req = urllib.request.urlopen("http://localhost:3001/api/faltadagua")
+        req = urllib.request.urlopen(f"{gestao_url}/api/faltadagua")
         res = json.loads(req.read().decode('utf-8'))
         demandas = res.get("data", [])
         
@@ -75,7 +77,7 @@ def reprocessar_analise_preditiva():
 
         # 2. Limpar insights antigos para forçar cálculo limpo
         try:
-            req_del = urllib.request.Request("http://localhost:3001/api/ai_insights_faltadagua", method="DELETE")
+            req_del = urllib.request.Request(f"{gestao_url}/api/ai_insights_faltadagua", method="DELETE")
             urllib.request.urlopen(req_del)
         except Exception:
             pass
@@ -83,7 +85,7 @@ def reprocessar_analise_preditiva():
         # 3. Enviar ao Saneaia FastAPI (porta 8000)
         data_bytes = json.dumps(payload).encode('utf-8')
         req_ai = urllib.request.Request(
-            "http://localhost:8000/api/integrations/analyze-external-demands",
+            f"{saneaia_url}/api/integrations/analyze-external-demands",
             data=data_bytes,
             headers={"Content-Type": "application/json"}
         )
@@ -97,7 +99,7 @@ def reprocessar_analise_preditiva():
         for insight in analises:
             ins_bytes = json.dumps(insight).encode('utf-8')
             req_ins = urllib.request.Request(
-                "http://localhost:3001/api/ai_insights_faltadagua",
+                f"{gestao_url}/api/ai_insights_faltadagua",
                 data=ins_bytes,
                 headers={"Content-Type": "application/json"}
             )

@@ -15,3 +15,21 @@ spec:
   tls:
     termination: edge
     insecureEdgeTerminationPolicy: Redirect
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: saneaia-route
+  namespace: embasa-umb
+  labels:
+    app: saneaia-app
+spec:
+  to:
+    kind: Service
+    name: saneaia-service
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
