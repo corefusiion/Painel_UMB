@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { API_URL } from "@/lib/api";
+import { API_URL, SANEAIA_API_URL } from "@/lib/api";
 import { useFaltaDagua } from "@/hooks/useFaltaDagua";
 import { useMemo, useEffect, useRef, useState, useCallback } from "react";
 
@@ -100,7 +100,7 @@ export function useAiInsights() {
         })),
       };
 
-      const response = await fetch(`http://localhost:8000/api/integrations/analyze-external-demands?_t=${Date.now()}`, { 
+      const response = await fetch(`${SANEAIA_API_URL}/integrations/analyze-external-demands?_t=${Date.now()}`, { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload) 
@@ -165,7 +165,7 @@ export function useAiInsights() {
         })),
       };
 
-      const response = await fetch(`http://localhost:8000/api/integrations/analyze-external-demands?_t=${Date.now()}`, { 
+      const response = await fetch(`${SANEAIA_API_URL}/integrations/analyze-external-demands?_t=${Date.now()}`, { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload) 

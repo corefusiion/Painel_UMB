@@ -299,15 +299,22 @@ O ecossistema foi desenvolvido em estrita observância à **Lei Geral de Proteç
 
 <div align="center">
 
-## 8. Prontidão para Implantação Corporativa (Kubernetes / OpenShift)
+## 8. Implantação Corporativa em Nuvem (Kubernetes / Red Hat OpenShift)
 
 </div>
 
-Por ter sido desenvolvido em microsserviços desacoplados e nativos em Linux/Windows, o ecossistema está preparado para conteinerização no cluster corporativo da EMBASA:
-* **Frontend:** Empacotamento estático servido por contêiner Nginx (Alpine).
-* **Backend Gestão:** Contêiner Node.js 20 (Alpine).
-* **SaneaIA:** Contêiner Python 3.11-slim com FastAPI.
-* **Persistência:** Suporte a montagem de volumes persistentes (PVCs) ou conexão direta a instâncias corporativas de banco de dados (PostgreSQL/Oracle).
+O ecossistema é 100% conteinerizado e possui manifestos prontos para deploy direto no cluster **Red Hat OpenShift (OCP)** ou Kubernetes corporativo da EMBASA:
+
+* **Arquitetura de Contêineres:**
+  * **Painel de Gestão (`gestao-app`):** Imagem Node.js 20 Alpine com compilação otimizada do frontend e backend Express (porta `3001`). Atua como Web Gateway seguro.
+  * **Motor Analítico SaneaIA (`saneaia-app`):** Imagem Python 3.11-slim executando FastAPI com Uvicorn (porta `8000`), Random Forest e mineração NLP.
+  * **Receptor Webhook (`webhook-app`):** Imagem Python 3.11-slim (porta `3002`) para recepção unificada de views corporativas.
+* **Teste Local com Docker Compose:**
+  * Execute `docker compose up -d` na raiz para inicializar todo o ecossistema com rede interna e volume de dados compartilhado.
+* **Manifestos Oficiais OpenShift:**
+  * Toda a especificação de infraestrutura (`01-pvc.yaml`, `02-configmap.yaml`, `Deployments`, `Services` e `Routes` com terminação TLS/HTTPS) está disponível no diretório [`openshift/`](./openshift/) com seu guia passo a passo em [`openshift/README.md`](./openshift/README.md).
+* **Documentação de Auditoria Técnica e POP 01:**
+  * O mapeamento minucioso dos 32 campos de vistoria de campo, regras de conformidade e exceções contextuais está documentado em [`DETALHES_OS_E_POP01.md`](./DETALHES_OS_E_POP01.md).
 
 ---
 

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: painel-umb-config
+  namespace: embasa-umb
+  labels:
+    app: painel-umb
+data:
+  PORT: "3001"
+  SANEAIA_URL: "http://saneaia-service:8000"
+  WEBHOOK_URL: "http://webhook-service:3002"
+  GESTAO_API_URL: "http://gestao-service:3001/api/import-csv"
+  DATABASE_PATH: "/app/data/database.sqlite"
+  SANEAIA_DB_PATH: "/app/data/saneaia.db"
+  GESTAO_DB_PATH: "/app/data/database.sqlite"

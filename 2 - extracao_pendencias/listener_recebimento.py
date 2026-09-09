@@ -47,7 +47,7 @@ except ImportError:
         pass
 
 PORT = int(os.getenv("WEBHOOK_PORT", 3002))
-LOCAL_API_URL = "http://127.0.0.1:3001/api/import-csv"
+LOCAL_API_URL = os.getenv("GESTAO_API_URL", "http://127.0.0.1:3001/api/import-csv")
 
 def normalize_keys(item):
     """
@@ -238,7 +238,7 @@ def insert_into_saneaia_db(items):
     diretamente na tabela 'solicitacoes' do banco SQLite do Projeto 3 (saneaia.db).
     Remove registros duplicados pelo número da Solicitação (SS) antes de inserir.
     """
-    saneaia_db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "3 - Saneaia", "database", "saneaia.db"))
+    saneaia_db_path = os.getenv("SANEAIA_DB_PATH", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "3 - Saneaia", "database", "saneaia.db")))
     if not os.path.exists(saneaia_db_path):
         print(f"  [AVISO] Aviso: Banco de dados SaneaIA não encontrado em {saneaia_db_path}")
         return

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { SANEAIA_API_URL } from "@/lib/api";
 
 export interface DnaEvent {
   type: string;
@@ -16,8 +17,7 @@ export function useDnaHidraulico() {
   const { data, isLoading, error } = useQuery<DnaHidraulicoData>({
     queryKey: ["dna_hidraulico_events"],
     queryFn: async () => {
-      const hostname = window.location.hostname;
-      const res = await fetch(`http://${hostname}:8000/api/ml/events`);
+      const res = await fetch(`${SANEAIA_API_URL}/ml/events`);
       if (!res.ok) throw new Error("Falha ao buscar eventos DNA Hidráulico");
       return res.json();
     },

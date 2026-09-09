@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: saneaia-deployment
+  namespace: embasa-umb
+  labels:
+    app: saneaia-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: saneaia-app
+  template:
+    metadata:
+      labels:
+        app: saneaia-app
+    spec:
+      containers:
+        - name: saneaia-container
+          image: image-registry.openshift-image-registry.svc:5000/embasa-umb/saneaia-app:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: painel-umb-config
+          volumeMounts:
+            - name: storage-volume
+              mountPath: /app/data
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1024Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2048Mi"
+      volumes:
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: painel-umb-storage
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: saneaia-service
+  namespace: embasa-umb
+  labels:
+    app: saneaia-app
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+      name: http
+  selector:
+    app: saneaia-app

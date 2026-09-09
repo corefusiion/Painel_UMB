@@ -20,8 +20,11 @@ const dbPathRoot = path.resolve(process.cwd(), 'database.sqlite');
 const dbPathBackend = path.resolve(__dirname, '..', 'database.sqlite');
 const dbPathFallback = path.resolve(__dirname, 'database.sqlite');
 
+const envDbPath = process.env.DATABASE_PATH;
 let dbPath: string;
-if (fs.existsSync(dbPathRoot)) {
+if (envDbPath && fs.existsSync(envDbPath)) {
+  dbPath = envDbPath;
+} else if (fs.existsSync(dbPathRoot)) {
   dbPath = dbPathRoot;
 } else if (fs.existsSync(dbPathBackend)) {
   dbPath = dbPathBackend;
@@ -215,6 +218,59 @@ try { db.exec(`ALTER TABLE vazamentos ADD COLUMN tipo_vazamento TEXT`); } catch 
 try { db.exec(`ALTER TABLE faltadagua_ex ADD COLUMN num_imovel TEXT`); } catch (e) {}
 try { db.exec(`ALTER TABLE faltadagua_ex ADD COLUMN data_abertura TEXT`); } catch (e) {}
 try { db.exec(`ALTER TABLE faltadagua_ex ADD COLUMN data_conclusao TEXT`); } catch (e) {}
+
+const SANEAIA_URL = process.env.SANEAIA_URL || 'http://127.0.0.1:8000';
+const WEBHOOK_URL = process.env.WEBHOOK_URL || 'http://127.0.0.1:3002';
+
+// ── Proxy para API SaneaIA (FastAPI) ──────────────────────────────────────────
+// Permite que o frontend acesse a IA internamente sem depender de expor a porta 8000
+app.use('/api/saneaia', async (req, res) => {
+  try {
+    const targetUrl = `${SANEAIA_URL}/api${req.url}`;
+    const options: RequestInit = {
+      method: req.method,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': req.headers['content-type'] || 'application/json',
+      },
+    };
+    if (['POST', 'PUT', 'PATCH'].includes(req.method) && req.body) {
+      options.body = JSON.stringify(req.body);
+    }
+    const response = await fetch(targetUrl, options);
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const data = await response.json();
+      res.status(response.status).json(data);
+    } else {
+      const text = await response.text();
+      res.status(response.status).send(text);
+    }
+  } catch (err: any) {
+    res.status(502).json({ error: 'Erro de comunicação com o SaneaIA', details: err.message });
+  }
+});
+
+// ── Proxy para o Webhook Receiver (Porta 3002) ────────────────────────────────
+app.all('/webhook', async (req, res) => {
+  try {
+    const targetUrl = `${WEBHOOK_URL}/webhook`;
+    const options: RequestInit = {
+      method: req.method,
+      headers: {
+        'Content-Type': req.headers['content-type'] || 'application/json',
+      },
+    };
+    if (req.method !== 'GET' && req.body) {
+      options.body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+    }
+    const response = await fetch(targetUrl, options);
+    const text = await response.text();
+    res.status(response.status).send(text);
+  } catch (err: any) {
+    res.status(502).json({ error: 'Erro ao encaminhar para o serviço Webhook', details: err.message });
+  }
+});
 
 // Dummy auth login
 app.post('/api/auth/login', (req, res) => {
@@ -852,10 +908,11 @@ if (fs.existsSync(distPath)) {
 }
 
 // Start server
-app.listen(3001, '0.0.0.0', () => {
+const PORT = parseInt(process.env.PORT || '3001', 10);
+app.listen(PORT, '0.0.0.0', () => {
   console.log('====================================================');
   console.log('  Painel Operacional UMB & SaneaIA - Backend API');
   console.log('  Desenvolvido por: Gleisson Santos - Embasa UMB');
   console.log('====================================================');
-  console.log('Backend rodando em http://0.0.0.0:3001');
+  console.log(`Backend rodando em http://0.0.0.0:${PORT}`);
 });

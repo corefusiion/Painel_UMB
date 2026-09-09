@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  gestao-app:
+    build:
+      context: ./"1 - gestoaumb"
+      dockerfile: Dockerfile
+    container_name: painel_gestao_umb
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - SANEAIA_URL=http://saneaia-api:8000
+      - WEBHOOK_URL=http://webhook-receiver:3002
+      - DATABASE_PATH=/app/data/database.sqlite
+    volumes:
+      - data-volume:/app/data
+    depends_on:
+      - saneaia-api
+      - webhook-receiver
+
+  saneaia-api:
+    build:
+      context: ./"3 - Saneaia"
+      dockerfile: Dockerfile
+    container_name: saneaia_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - SANEAIA_DB_PATH=/app/data/saneaia.db
+      - GESTAO_DB_PATH=/app/data/database.sqlite
+    volumes:
+      - data-volume:/app/data
+
+  webhook-receiver:
+    build:
+      context: ./"2 - extracao_pendencias"
+      dockerfile: Dockerfile
+    container_name: webhook_embasa
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    environment:
+      - WEBHOOK_PORT=3002
+      - GESTAO_API_URL=http://gestao-app:3001/api/import-csv
+      - SANEAIA_DB_PATH=/app/data/saneaia.db
+    volumes:
+      - data-volume:/app/data
+
+volumes:
+  data-volume:
+    name: painel_umb_data

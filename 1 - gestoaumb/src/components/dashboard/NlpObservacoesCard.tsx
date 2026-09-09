@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Filter, RefreshCw } from "lucide-react";
+import { SANEAIA_API_URL } from "@/lib/api";
 
 interface NlpMetrics {
   total_analisadas: number;
@@ -35,7 +36,7 @@ export function NlpObservacoesCard() {
   const fetchNlpSummary = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/agent/nlp-summary?_t=${Date.now()}`);
+      const res = await fetch(`${SANEAIA_API_URL}/agent/nlp-summary?_t=${Date.now()}`);
       if (res.ok) {
         const json = await res.json();
         if (json?.data) {

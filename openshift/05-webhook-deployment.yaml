@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook-deployment
+  namespace: embasa-umb
+  labels:
+    app: webhook-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webhook-app
+  template:
+    metadata:
+      labels:
+        app: webhook-app
+    spec:
+      containers:
+        - name: webhook-container
+          image: image-registry.openshift-image-registry.svc:5000/embasa-umb/webhook-app:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3002
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: painel-umb-config
+          volumeMounts:
+            - name: storage-volume
+              mountPath: /app/data
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+      volumes:
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: painel-umb-storage
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-service
+  namespace: embasa-umb
+  labels:
+    app: webhook-app
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3002
+      targetPort: 3002
+      protocol: TCP
+      name: http
+  selector:
+    app: webhook-app

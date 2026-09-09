@@ -1,8 +1,8 @@
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'saneaia.db')
-GESTAO_DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '1 - gestoaumb', 'database.sqlite'))
+DB_PATH = os.getenv("SANEAIA_DB_PATH", os.path.join(os.path.dirname(__file__), 'saneaia.db'))
+GESTAO_DB_PATH = os.getenv("GESTAO_DB_PATH", os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '1 - gestoaumb', 'database.sqlite')))
 
 def dict_factory(cursor, row):
     d = {}

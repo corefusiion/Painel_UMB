@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gestao-deployment
+  namespace: embasa-umb
+  labels:
+    app: gestao-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gestao-app
+  template:
+    metadata:
+      labels:
+        app: gestao-app
+    spec:
+      containers:
+        - name: gestao-container
+          image: image-registry.openshift-image-registry.svc:5000/embasa-umb/gestao-app:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3001
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: painel-umb-config
+          volumeMounts:
+            - name: storage-volume
+              mountPath: /app/data
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1536Mi"
+      volumes:
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: painel-umb-storage
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gestao-service
+  namespace: embasa-umb
+  labels:
+    app: gestao-app
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3001
+      targetPort: 3001
+      protocol: TCP
+      name: http
+  selector:
+    app: gestao-app
