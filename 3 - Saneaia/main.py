@@ -139,12 +139,45 @@ async def root():
     )
 
 
+def free_port_if_occupied(target_port: int):
+    """Garante que a porta seja liberada de processos zumbis anteriores antes de iniciar (previne WinError 10048)."""
+    import subprocess
+    import time
+    my_pid = os.getpid()
+    try:
+        output = subprocess.check_output("netstat -ano", shell=True, text=True, errors="ignore")
+        for line in output.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split()
+            if len(parts) >= 5 and parts[0].upper() == "TCP":
+                local_addr = parts[1]
+                state = parts[3]
+                pid_str = parts[4]
+                if state.upper() == "LISTENING" and local_addr.endswith(f":{target_port}"):
+                    try:
+                        pid = int(pid_str)
+                        if pid != my_pid and pid != 0:
+                            logger.warning(f"[AUTO-PORT] Porta {target_port} ocupada pelo processo residual {pid}. Liberando...")
+                            subprocess.run(f"taskkill /F /PID {pid}", shell=True, capture_output=True)
+                            time.sleep(1)
+                    except Exception:
+                        pass
+    except Exception as e:
+        logger.debug(f"[AUTO-PORT] Verificação de porta: {e}")
+
+
 # --- Entry Point ---
 if __name__ == "__main__":
     import uvicorn
 
     settings = get_settings()
     base_dir = os.path.dirname(__file__)
+
+    # Auto-liberar a porta configurada se houver processo residual preso
+    free_port_if_occupied(settings.app_port)
+
     uvicorn.run(
         app,
         host=settings.app_host,
