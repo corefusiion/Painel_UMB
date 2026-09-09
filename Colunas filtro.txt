@@ -1,0 +1,118 @@
+================================================================================
+GUIA OPERACIONAL DE CONFIGURAÇÃO DE FILTROS DO SCI WEB (EMBASA NET)
+Colunas Utilizadas pelos Projetos 1 (Gestão UMB) e 3 (SaneaIA ML)
+================================================================================
+
+1. CONFIGURAÇÃO DE CREDENCIAIS DE ACESSO (.env)
+--------------------------------------------------------------------------------
+Para que o robô de extração em Selenium consiga autenticar automaticamente no
+sistema SCI Web da Embasa, o usuário deve informar suas credenciais no arquivo .env.
+
+Onde preencher:
+- Opção 1 (Pasta da Extração): "2 - extracao_pendencias/.env"
+- Opção 2 (Raiz do Projeto):   ".env" (na raiz da pasta UMBMAS)
+
+Estrutura das variáveis que devem ser preenchidas:
+--------------------------------------------------
+SCI_USER=seu_usuario_embasa
+SCI_PASSWORD=sua_senha_embasa
+--------------------------------------------------
+
+* Dica: Se o arquivo .env não existir, copie o modelo de ".env.example" e renomeie
+  para ".env". O Selenium está programado para verificar automaticamente tanto a
+  pasta local "2 - extracao_pendencias" quanto a raiz do projeto.
+
+
+2. POR QUE É NECESSÁRIO CRIAR UM FILTRO PERSONALIZADO NO SCI WEB?
+--------------------------------------------------------------------------------
+No sistema SCI Web (módulo Acompanhamento / Consulta Geral de SS / Pendências), a
+exportação em lote para CSV gera exatamente as colunas que estiverem visíveis na
+grade de dados do usuário.
+
+Portanto, para que os scripts de ingestão e os bancos de dados SQLite locais
+consigam mapear e processar as informações sem perda de dados, o usuário deve
+acessar o SCI Web previamente e salvar suas preferências de filtro ("Filtros do
+Usuário") contendo as colunas listadas abaixo.
+
+
+3. COLUNAS PARA O PROJETO 1 (1 - gestoaumb / Painel de Gestão de Pendências)
+--------------------------------------------------------------------------------
+Utilizado para monitoramento em tempo real das demandas operacionais em aberto.
+Filtros correspondentes:
+- Falta d'Água (Pendentes: Aberta / Programada)
+- Vazamentos de Água e Ramal
+- Reposição de Pavimentos
+- Atendimento por Carro Pipa
+
+COLUNAS QUE DEVEM ESTAR PRESENTES NO FILTRO DO SCI WEB:
+--------------------------------------------------------------------------------
+Nº  | NOME NO SCI WEB                       | FINALIDADE NO SISTEMA
+----+---------------------------------------+-----------------------------------
+01  | SS                                    | Identificador único da solicitação
+02  | Serviço                               | Código e descrição do serviço
+03  | Especificação (ou Obs da SS)          | Detalhamento inicial do chamado
+04  | Matrícula                             | Matrícula da ligação do cliente
+05  | Localidade                            | Localidade (ex: SALVADOR)
+06  | Bairro                                | Bairro para filtros e agrupamentos
+07  | Logradouro                            | Rua, avenida ou travessa
+08  | Núm do Imóvel (ou CEP)                | Identificação predial do cliente
+09  | Dt/Hr Abertura da SS                  | Data e hora da abertura da SS
+10  | Sit da OS                             | Situação da OS (Aberta, Programada)
+11  | Unid Atual (OS)                       | Unidade operacional responsável
+12  | Data/Hora Última Tramitação da OS     | Momento da última tramitação
+13  | Obs da SS                             | Observações registradas no chamado
+--------------------------------------------------------------------------------
+
+
+4. COLUNAS PARA O PROJETO 3 (3 - Saneaia / IA, Machine Learning e POP)
+--------------------------------------------------------------------------------
+Utilizado pelo modelo de Inteligência Artificial para cálculo probabilístico de
+reincidência (15 dias, 6 meses, 12 meses), mineração de texto NLP e avaliação
+de conformidade com a Norma Operacional POP 01 da EMBASA.
+
+Filtro correspondente:
+- Falta d'Água Executadas (Concluída Executada / Concluída Não Executada)
+
+COLUNAS QUE DEVEM ESTAR PRESENTES NO FILTRO DO SCI WEB:
+--------------------------------------------------------------------------------
+Nº  | NOME NO SCI WEB                       | FINALIDADE NO SISTEMA
+----+---------------------------------------+-----------------------------------
+01  | SS                                    | Identificador único da solicitação
+02  | OS (ou Número OS)                     | Número da ordem de serviço
+03  | Serviço                               | Código do serviço executado
+04  | Especificação                         | Descrição técnica da solicitação
+05  | Matrícula                             | VITAL: Cálculo de reincidência ML
+06  | Localidade                            | Localidade atendida
+07  | Setor                                 | Setor de abastecimento hidráulico
+08  | Bairro                                | Bairro para clusterização espacial
+09  | Logradouro                            | Logradouro para alerta de trecho
+10  | Núm do Imóvel                         | Número predial atendido
+11  | CEP                                   | Código de endereçamento postal
+12  | Dt/Hr Abertura da SS                  | Timestamp de abertura da demanda
+13  | Conclusão da SS (ou Encerramento)     | Data e hora de conclusão em campo
+14  | Obs da SS                             | Reclamação inicial do cliente
+15  | Obs de Enc da OS                      | CRUCIAL: NLP, Sentimento e POP 01
+16  | Sit da OS                             | Concluída Executada / Não Execut.
+17  | Data/Hora Última Tramitação da OS     | Data da finalização técnica
+18  | Unid Atual (OS)                       | Unidade executora do serviço
+--------------------------------------------------------------------------------
+
+* NOTA IMPORTANTE SOBRE "Obs de Enc da OS":
+  Esta coluna contém o parecer descritivo do técnico de campo ao encerrar o
+  serviço. O modelo de Machine Learning e o pipeline de NLP utilizam essa coluna
+  para verificar se o encerramento atendeu aos critérios técnicos obrigatórios
+  (teste de pressão, vazão no hidrômetro, identificação de causas de desabastecimento)
+  estabelecidos no POP 01. Sem essa coluna no filtro, a análise de POP ficará
+  impossibilitada.
+
+
+5. PASSO A PASSO PARA SALVAR O FILTRO NO SCI WEB
+--------------------------------------------------------------------------------
+1. Acesse o SCI Web com seu login institucional da Embasa.
+2. Navegue até: Atendimento -> Acompanhamento -> Consulta Geral (ou Pendências).
+3. Na grade de resultados, clique no ícone de engrenagem / "Preferências de Colunas".
+4. Marque todas as colunas listadas nas tabelas acima para a categoria correspondente.
+5. Clique em "Salvar Preferências" ou "Salvar como Filtro do Usuário".
+6. Pronto! Agora o robô de extração em Selenium e o script "master_extracao.py"
+   conseguirão acionar o filtro e baixar os relatórios com 100% de compatibilidade.
+================================================================================

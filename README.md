@@ -207,16 +207,44 @@ O script iniciará automaticamente quatro terminais paralelos:
 
 </div>
 
-Quando não houver alimentação direta via Webhook das views da Embasa, os dados podem ser extraídos do sistema legado (SCI Web) através do robô automatizado:
+Quando não houver alimentação direta via Webhook das views corporativas da Embasa, os dados podem ser extraídos diretamente do sistema legado (**SCI Web**) através do robô de automação com navegador Firefox:
 
-### 5.1. Execução do Script Mestre
+### 5.1. Pré-requisito Obrigatório: Filtros Personalizados no SCI Web
+O robô de automação Selenium baseia-se na abertura das **Preferências de Filtros do Usuário** no SCI Web (`form-filtroAcss-btnOpenDlgPrefs`). No SCI Web, o arquivo CSV exportado reflete com exatidão as colunas visíveis na tabela configurada pelo usuário.
+
+> [!IMPORTANT]
+> Antes de executar o robô, o operador **deve acessar o SCI Web e salvar as preferências de filtro** contendo as colunas exigidas pelos sistemas. O guia completo de referência está documentado no arquivo [`Colunas filtro.txt`](Colunas%20filtro.txt) na raiz do projeto.
+
+#### Resumo das Colunas por Módulo:
+
+* **Para o Projeto 1 (`1 - gestoaumb` — Gestão de Pendências):**
+  * *Filtros:* Falta d'Água (Pendentes), Vazamento, Pavimento e Carro Pipa.
+  * *Colunas Necessárias:* `SS`, `Serviço`, `Especificação` (ou `Obs da SS`), `Matrícula`, `Localidade`, `Bairro`, `Logradouro`, `Núm do Imóvel` (ou `CEP`), `Dt/Hr Abertura da SS`, `Sit da OS`, `Unid Atual (OS)`, `Data/Hora Última Tramitação da OS`, `Obs da SS`.
+
+* **Para o Projeto 3 (`3 - Saneaia` — Falta d'Água Executadas e Inteligência Preditiva):**
+  * *Filtro:* Falta d'Água Executadas (Concluídas).
+  * *Colunas Necessárias:* `SS`, `OS`, `Serviço`, `Especificação`, `Matrícula` (obrigatória para cálculo de reincidência 15d, 6m, 12m), `Localidade`, `Setor`, `Bairro`, `Logradouro`, `Núm do Imóvel`, `CEP`, `Dt/Hr Abertura da SS`, `Conclusão da SS` (ou `Encerramento`), `Obs da SS`, `Obs de Enc da OS` (obrigatória para NLP e conformidade com POP 01), `Sit da OS`, `Data/Hora Última Tramitação da OS`, `Unid Atual (OS)`.
+
+### 5.2. Onde Preencher as Credenciais de Acesso (`.env`)
+Para que o Selenium realize a autenticação com sucesso no SCI Web, o usuário deve preencher o usuário e senha institucional no arquivo `.env`.
+
+* **Local do arquivo:** `2 - extracao_pendencias/.env` (ou no arquivo `.env` na raiz do projeto `Painel_UMB`).
+* **Parâmetros a preencher:**
+  ```env
+  SCI_USER=seu_usuario_embasa
+  SCI_PASSWORD=sua_senha_embasa
+  ```
+> [!NOTE]
+> O robô Selenium está programado para verificar automaticamente tanto a pasta local `2 - extracao_pendencias/.env` quanto o `.env` da raiz do repositório, garantindo inicialização imediata.
+
+### 5.3. Execução do Script Mestre
 Abra um terminal na pasta `2 - extracao_pendencias` com o ambiente virtual ativado:
 ```bash
 cd "2 - extracao_pendencias"
 venv\Scripts\python.exe master_extracao.py
 ```
 
-### 5.2. Menu Interativo e Fases de Execução
+### 5.4. Menu Interativo e Fases de Execução
 O terminal exibirá o menu mestre com as seguintes opções operacionais:
 
 * **[1] Executar Ciclo Completo de Extração (Recomendado):**
@@ -229,7 +257,7 @@ O terminal exibirá o menu mestre com as seguintes opções operacionais:
 * **[4] Extrair Somente Pendências Ativas:** Coleta as demandas abertas no momento.
 * **[5] Iniciar Agendador Automático:** Ativa execução recorrente com intervalo programado (ex: a cada 60 minutos).
 
-### 5.3. Filtros de Período Suportados
+### 5.5. Filtros de Período Suportados
 Ao selecionar extrações com período, o script permite escolher:
 * **[1] Ontem e Hoje (Padrão Operacional):** Coleta as ordens do dia corrente e do dia anterior.
 * **[2] Últimos 3 dias:** Janela ampliada para fechamento de fins de semana.

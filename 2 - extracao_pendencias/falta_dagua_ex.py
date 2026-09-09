@@ -13,9 +13,13 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from webdriver_manager.firefox import GeckoDriverManager
 import pandas as pd
 
-# Carregar variáveis de ambiente do .env na pasta do projeto
+# Carregar variáveis de ambiente do .env local ou da raiz do projeto
 ENV_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
-load_dotenv(ENV_PATH)
+ROOT_ENV_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+if os.path.exists(ENV_PATH):
+    load_dotenv(ENV_PATH)
+if os.path.exists(ROOT_ENV_PATH):
+    load_dotenv(ROOT_ENV_PATH)
 
 SCI_USER = os.getenv("SCI_USER")
 SCI_PASSWORD = os.getenv("SCI_PASSWORD")

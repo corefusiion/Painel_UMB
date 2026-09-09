@@ -72,8 +72,12 @@ def normalize_keys(item):
         norm = unicodedata.normalize('NFD', raw).encode('ascii', 'ignore').decode('utf-8')
         norm = "".join(c for c in norm if c.isalnum())
         
-        if norm in ["ss", "os", "numeroos", "numeroosss"]:
+        if norm == "ss":
             normalized["ss"] = v
+        elif norm in ["os", "numeroos", "numeroosss"]:
+            normalized["os_numero"] = v
+            if "ss" not in normalized:
+                normalized["ss"] = v
         elif "servi" in norm: # "servi" casa com "servico" e "servio"
             normalized["servico"] = v
         elif "matricula" in norm or "matri" in norm or "matrcul" in norm or norm.startswith("matr"): # Evita colisão com última tramitação
@@ -82,6 +86,10 @@ def normalize_keys(item):
             normalized["bairro"] = v
         elif "logradouro" in norm:
             normalized["logradouro"] = v
+        elif "setor" in norm:
+            normalized["setor"] = v
+        elif "cep" in norm:
+            normalized["cep"] = v
         elif "numimovel" in norm or "numeroimovel" in norm or "imovel" in norm or "num" in norm:
             normalized["num_imovel"] = v
         elif "dtabertura" in norm or "dataabertura" in norm or "abertura" in norm:
@@ -290,26 +298,29 @@ def insert_into_saneaia_db(items):
             INSERT INTO solicitacoes (
                 ss, os_numero, especificacao, servico, unidade_os, 
                 matricula, bairro, logradouro, cep, data_encerramento, 
-                observacao, situacao, data_ultima_tramitacao, localidade, mes, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                observacao, situacao, data_ultima_tramitacao, localidade, mes, created_at, setor
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
+            os_num = str(item.get("os_numero") or ss).strip()
+            cep_val = str(item.get("cep") or item.get("num_imovel") or "").strip()
             cursor.execute(sql, (
                 ss,
-                ss,
+                os_num,
                 str(item.get("especificacao") or ""),
                 str(item.get("servico") or ""),
                 str(item.get("unidade_atual") or ""),
                 str(item.get("matricula") or ""),
                 str(item.get("bairro") or ""),
                 str(item.get("logradouro") or ""),
-                str(item.get("num_imovel") or ""),
+                cep_val,
                 str(item.get("data_conclusao") or ""),
                 str(item.get("observacao") or ""),
                 str(item.get("situacao") or ""),
                 str(item.get("data_tramitacao") or ""),
                 str(item.get("localidade") or ""),
                 mes_nome,
-                created_at_val
+                created_at_val,
+                str(item.get("setor") or "")
             ))
             inserted_count += 1
             
