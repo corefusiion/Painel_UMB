@@ -415,65 +415,101 @@ function renderEvolucaoAnualChart(years) {
     if (lastRealMonthIndex >= 0 && lastRealMonthIndex < 11) {
         predMonthIndex = lastRealMonthIndex + 1;
         
-        // 1. Calcula a média histórica para o mês atual
-        let sumCurrentHist = 0, countCurrentHist = 0;
-        years.forEach(y => {
-            if (y !== maxYear) {
-                const yd = globalTemporalData.find(d => d.ano === y && d.mes_numero - 1 === lastRealMonthIndex);
-                if (yd) {
-                    sumCurrentHist += yd.total_solicitacoes;
-                    countCurrentHist++;
-                }
+        // 1. Identifica anos anteriores para compor a base histórica
+        const priorYears = years.filter(y => y !== maxYear);
+
+        // 2. Calcula o volume do ano corrente nos meses completos (0 até lastCompleteMonthIndex)
+        let sumCurrentCompleted = 0;
+        for (let m = 0; m <= lastCompleteMonthIndex; m++) {
+            const d = maxYearData.find(x => x.mes_numero - 1 === m);
+            if (d) sumCurrentCompleted += d.total_solicitacoes;
+        }
+
+        // 3. Calcula o volume médio ponderado dos anos anteriores para o mesmo período
+        let sumHistCompleted = 0;
+        let weightSum = 0;
+        priorYears.forEach(y => {
+            let yWeight = 1.0;
+            if (y === maxYear - 1) yWeight = 3.0; // ano imediatamente anterior (ex: 2025)
+            else if (y === maxYear - 2) yWeight = 1.5; // ex: 2024
+            else if (y === maxYear - 3) yWeight = 2.0; // ex: 2023
+
+            const ySum = globalTemporalData
+                .filter(x => x.ano === y && x.mes_numero - 1 <= lastCompleteMonthIndex && x.total_solicitacoes > 0)
+                .reduce((acc, curr) => acc + curr.total_solicitacoes, 0);
+
+            if (ySum > 0) {
+                sumHistCompleted += ySum * yWeight;
+                weightSum += yWeight;
             }
         });
-        const avgCurrentMonth = countCurrentHist > 0 ? (sumCurrentHist / countCurrentHist) : lastRealValue;
 
-        // 2. Projeta o mês atual com base nos dias passados se ele estiver ativo/incompleto
+        const histBaseline = weightSum > 0 ? (sumHistCompleted / weightSum) : sumCurrentCompleted;
+        // Fator de escala do ano corrente vs histórico (ex: ~0.70 a 1.40)
+        const levelFactor = histBaseline > 0 ? Math.max(0.65, Math.min(1.45, sumCurrentCompleted / histBaseline)) : 1.0;
+
+        // Função auxiliar para calcular o valor sazonal esperado para cada mês m (0 a 11)
+        const getSeasonalExpected = (m) => {
+            let sumM = 0;
+            let wM = 0;
+            priorYears.forEach(y => {
+                let yWeight = 1.0;
+                if (y === maxYear - 1) yWeight = 3.0;
+                else if (y === maxYear - 2) yWeight = 1.5;
+                else if (y === maxYear - 3) yWeight = 2.0;
+
+                const match = globalTemporalData.find(x => x.ano === y && x.mes_numero - 1 === m);
+                if (match && match.total_solicitacoes > 0) {
+                    if (match.total_solicitacoes >= 400 || m < 10) {
+                        sumM += match.total_solicitacoes * yWeight;
+                        wM += yWeight;
+                    }
+                }
+            });
+            const avgM = wM > 0 ? (sumM / wM) : (lastCompleteValue || 800);
+            return avgM * levelFactor;
+        };
+
+        // 4. Projeta o mês atual ativo se estiver incompleto (Setembro)
+        const seasExpectedCurrent = getSeasonalExpected(lastRealMonthIndex);
         if (isCurrentMonthActive) {
             const currentDay = todayDate.getDate();
             const totalDays = new Date(maxYear, lastRealMonthIndex + 1, 0).getDate();
             const progressRatio = Math.max(1, currentDay) / totalDays;
-            projectedCurrentValue = Math.round(lastRealValue / progressRatio);
-            
-            // Suavização: limita a projeção a um intervalo realista de 50% a 200% da média histórica
-            if (countCurrentHist > 0 && currentDay > 3) {
-                const minVal = Math.round(avgCurrentMonth * 0.5);
-                const maxVal = Math.round(avgCurrentMonth * 2.0);
-                projectedCurrentValue = Math.max(minVal, Math.min(maxVal, projectedCurrentValue));
-            } else if (countCurrentHist > 0) {
-                projectedCurrentValue = Math.round(avgCurrentMonth);
-            }
+            const runRate = Math.round(lastRealValue / progressRatio);
+
+            // Shrinkage bayesiano: no início do mês a sazonalidade tem maior peso; ao avançar dos dias, o ritmo real ganha peso
+            const w = progressRatio / (progressRatio + 0.8);
+            projectedCurrentValue = Math.round(w * runRate + (1 - w) * seasExpectedCurrent);
+
+            // Suavização defensiva para evitar distorções
+            const minAllowed = Math.round(lastCompleteValue * 0.6);
+            const maxAllowed = Math.round(Math.max(lastCompleteValue * 1.8, seasExpectedCurrent * 1.5));
+            projectedCurrentValue = Math.max(minAllowed, Math.min(maxAllowed, projectedCurrentValue));
+        } else {
+            projectedCurrentValue = lastRealValue;
         }
 
-        // 3. Calcula a média histórica para o próximo mês (predMonthIndex)
-        let sumNextHist = 0, countNextHist = 0;
-        years.forEach(y => {
-            if (y !== maxYear) {
-                const yd = globalTemporalData.find(d => d.ano === y && d.mes_numero - 1 === predMonthIndex);
-                if (yd) {
-                    sumNextHist += yd.total_solicitacoes;
-                    countNextHist++;
-                }
-            }
-        });
-        const avgNextMonth = countNextHist > 0 ? (sumNextHist / countNextHist) : 0;
+        // 5. Previsão para os meses futuros até Dezembro com propagação de momentum
+        const currentMomentum = seasExpectedCurrent > 0 ? (projectedCurrentValue / seasExpectedCurrent) : 1.0;
+        const cappedMomentum = Math.max(0.85, Math.min(1.20, currentMomentum));
 
-        // 4. Calcula o fator de tendência (projeção do mês atual vs média do mês atual)
-        const trendFactor = avgCurrentMonth > 0 ? (projectedCurrentValue / avgCurrentMonth) : 1.0;
-        const cappedFactor = Math.max(0.6, Math.min(1.8, trendFactor));
-        predValue = Math.round(avgNextMonth * cappedFactor);
-
-        // 5. Constrói o dataset da linha tracejada de Previsão/Tendência
         const predData = new Array(12).fill(null);
-        
         if (isCurrentMonthActive) {
             predData[lastCompleteMonthIndex] = lastCompleteValue;
             predData[lastRealMonthIndex] = projectedCurrentValue;
-            predData[predMonthIndex] = predValue;
         } else {
             predData[lastRealMonthIndex] = lastRealValue;
-            predData[predMonthIndex] = predValue;
         }
+
+        for (let m = lastRealMonthIndex + 1; m <= 11; m++) {
+            const decay = Math.pow(0.7, m - lastRealMonthIndex);
+            const mFactor = 1.0 + (cappedMomentum - 1.0) * decay;
+            const valM = Math.round(getSeasonalExpected(m) * mFactor);
+            predData[m] = valM;
+        }
+
+        predValue = predData[predMonthIndex] || 0;
 
         const maxYearColor = colors[years.indexOf(maxYear) % colors.length];
 
@@ -485,13 +521,13 @@ function renderEvolucaoAnualChart(years) {
             borderDash: [5, 5],
             borderWidth: 2.5,
             fill: false,
-            tension: 0.1,
+            tension: 0.25,
             pointStyle: 'circle',
             pointRadius: (ctx) => {
-                if (isCurrentMonthActive) {
-                    return (ctx.dataIndex === lastRealMonthIndex || ctx.dataIndex === predMonthIndex) ? 4 : 0;
+                if (ctx.dataIndex >= lastRealMonthIndex && ctx.dataset.data[ctx.dataIndex] !== null) {
+                    return 4;
                 }
-                return ctx.dataIndex === predMonthIndex ? 4 : 0;
+                return 0;
             },
             pointHoverRadius: 7,
             isPrediction: true
@@ -539,7 +575,8 @@ function renderEvolucaoAnualChart(years) {
             chart.data.datasets.forEach((dataset, i) => {
                 if (dataset.isPrediction) {
                     const meta = chart.getDatasetMeta(i);
-                    const pt = meta.data[predMonthIndex];
+                    const focalIndex = predMonthIndex !== -1 ? predMonthIndex : lastRealMonthIndex;
+                    const pt = meta.data[focalIndex];
                     if (!pt) return;
 
                     hasPred = true;
@@ -549,9 +586,10 @@ function renderEvolucaoAnualChart(years) {
                         overlay.style.top = pt.y + 'px';
                     }
 
-                    // Ícone de tendência comparando com a projeção/real
+                    // Ícone de tendência comparando o mês seguinte projetado com o mês base
                     const baseVal = isCurrentMonthActive ? projectedCurrentValue : lastRealValue;
-                    const diff = predValue - baseVal;
+                    const focalVal = dataset.data[focalIndex] || 0;
+                    const diff = focalVal - baseVal;
                     ctx.save();
                     ctx.translate(pt.x + 12, pt.y - 12);
                     if (diff > 50) {
@@ -564,14 +602,6 @@ function renderEvolucaoAnualChart(years) {
                         ctx.fillStyle = '#F59E0B'; // Linha Amarela Estável
                         ctx.fillRect(-3, -1, 6, 2);
                     }
-                    ctx.restore();
-                    
-                    // Legend no canto inferior
-                    ctx.save();
-                    ctx.font = "italic 10px 'Inter', sans-serif";
-                    ctx.fillStyle = "#94a3b8";
-                    ctx.textAlign = "right";
-                    ctx.fillText("Projeção e tendência baseadas no histórico sazonal e ritmo do mês atual.", chart.width - 15, chart.height - 15);
                     ctx.restore();
                 }
             });
@@ -619,22 +649,28 @@ function renderEvolucaoAnualChart(years) {
                         label: function(context) {
                             if (context.dataset.isPrediction) {
                                 if (isCurrentMonthActive && context.dataIndex === lastRealMonthIndex) {
-                                    return `${maxYear}: ${context.raw.toLocaleString('pt-BR')} (PROJEÇÃO)*`;
+                                    return `${maxYear}: ${(context.raw || 0).toLocaleString('pt-BR')} (PROJEÇÃO)*`;
                                 }
-                                if (context.dataIndex === predMonthIndex) {
-                                    return `${maxYear}: ${context.raw.toLocaleString('pt-BR')} (PREVISÃO)*`;
+                                if (context.dataIndex > lastRealMonthIndex) {
+                                    return `${maxYear}: ${(context.raw || 0).toLocaleString('pt-BR')} (PREVISÃO SAZONAL)*`;
                                 }
                                 return null;
                             }
                             return `${context.dataset.label}: ${(context.raw || 0).toLocaleString('pt-BR')}`;
                         },
                         afterBody: function(context) {
-                            const hasPred = context.some(c => c.dataset.isPrediction && c.dataIndex === predMonthIndex);
-                            const hasProj = context.some(c => c.dataset.isPrediction && c.dataIndex === lastRealMonthIndex);
-                            if (hasPred) return `
-*Previsão baseada no histórico de sazonalidade.`;
-                            if (hasProj) return `
-*Projeção linear baseada no ritmo dos primeiros ${todayDate.getDate()} dias do mês.`;
+                            const hasProj = context.some(c => c.dataset.isPrediction && isCurrentMonthActive && c.dataIndex === lastRealMonthIndex);
+                            const hasPred = context.some(c => c.dataset.isPrediction && c.dataIndex > lastRealMonthIndex);
+                            if (hasProj && hasPred) {
+                                return `\n*Projeção e previsão baseadas no histórico sazonal e ritmo do ano.`;
+                            }
+                            if (hasProj) {
+                                const day = todayDate.getDate();
+                                return `\n*Projeção do mês atual combinando ritmo dos primeiros ${day} dias com sazonalidade histórica.`;
+                            }
+                            if (hasPred) {
+                                return `\n*Previsão baseada no modelo de sazonalidade e histórico dos anos anteriores.`;
+                            }
                             return '';
                         }
                     }
