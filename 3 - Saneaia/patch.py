@@ -1,6 +1,6 @@
 import os
 
-base_dir = r'C:\Users\t034183\Desktop\UMBMAS\3 - Saneaia'
+base_dir = os.path.dirname(os.path.abspath(__file__))
 
 # 1. API - append to solicitacoes.py
 api_file = os.path.join(base_dir, 'api', 'routes', 'solicitacoes.py')

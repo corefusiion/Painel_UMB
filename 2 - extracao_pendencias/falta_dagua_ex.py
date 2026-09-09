@@ -30,7 +30,7 @@ ID_BTN_CSV = "form-grid-grid-exportCSVBtn-j_idt848"
 ID_NEXT_PAGE = "form-grid-grid-j_idt860-nextPage"
 
 # Pasta de Destino para os downloads de Falta d'Água Executadas
-DOWNLOAD_DIR = r"C:\Users\t034183\Desktop\UMBMAS\2 - extracao_pendencias\dados\Falta_dagua_ex"
+DOWNLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dados", "Falta_dagua_ex")
 
 def get_firefox_driver(download_folder, retries=3, headless=True):
     """Configura o navegador Mozilla Firefox para downloads automáticos com retry."""

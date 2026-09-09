@@ -19,6 +19,10 @@ Base dados UMB/
 *Base*dados*UMB*
 dados_brutos/
 **/dados_brutos/**
+docs_integracao/
+**/docs_integracao/**
+.docs_integracao/
+**/.docs_integracao/**
 3 - Saneaia/dados_entrada/
 **/dados_entrada/**
 *.tar.gz

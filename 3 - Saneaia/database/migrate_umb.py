@@ -1,8 +1,9 @@
 import sqlite3
 import os
 
-source_db = r"C:\Users\t034183\Desktop\UMBMAS\3 - Saneaia\Base dados UMB\base_umb.db"
-target_db = r"C:\Users\t034183\Desktop\UMBMAS\3 - Saneaia\database\saneaia.db"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+source_db = os.path.join(BASE_DIR, "Base dados UMB", "base_umb.db")
+target_db = os.path.join(BASE_DIR, "database", "saneaia.db")
 
 def migrate():
     print("Iniciando migração de dados do backup massivo...")

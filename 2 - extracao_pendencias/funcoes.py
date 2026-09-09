@@ -22,8 +22,8 @@ from dotenv import load_dotenv
 ENV_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
 load_dotenv(ENV_PATH)
 
-SCI_USER = os.getenv("SCI_USER", "t034183")
-SCI_PASSWORD = os.getenv("SCI_PASSWORD", "Caneta2020*")
+SCI_USER = os.getenv("SCI_USER")
+SCI_PASSWORD = os.getenv("SCI_PASSWORD")
 
 # Variáveis globais para contagem com Lock de concorrência
 num_downloads = 0
