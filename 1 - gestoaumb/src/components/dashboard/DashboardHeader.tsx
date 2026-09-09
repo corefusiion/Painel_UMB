@@ -30,9 +30,6 @@ export function DashboardHeader({ onImportClick, onToggleSidebar, isSidebarColla
           <h1 className="text-lg sm:text-xl lg:text-2xl font-light text-primary-foreground tracking-wide">
             Painel Gerencial UMB
           </h1>
-          <span className="hidden md:inline-flex items-center text-[11px] text-white/80 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/20 font-light">
-            Desenvolvido por Gleisson Santos · Embasa UMB
-          </span>
         </div>
 
         <div className="text-right flex items-center gap-3 sm:gap-4">

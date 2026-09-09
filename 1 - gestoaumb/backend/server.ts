@@ -853,5 +853,9 @@ if (fs.existsSync(distPath)) {
 
 // Start server
 app.listen(3001, '0.0.0.0', () => {
+  console.log('====================================================');
+  console.log('  Painel Operacional UMB & SaneaIA - Backend API');
+  console.log('  Desenvolvido por: Gleisson Santos - Embasa UMB');
+  console.log('====================================================');
   console.log('Backend rodando em http://0.0.0.0:3001');
 });

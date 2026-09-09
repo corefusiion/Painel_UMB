@@ -649,6 +649,7 @@ def run_server():
     httpd = http.server.HTTPServer(server_address, WebhookHandler)
     print("=" * 60)
     print(f" UMBMAS Webhook Receiver unificado - ATIVO")
+    print(f" Desenvolvido por: Gleisson Santos - Embasa UMB")
     print(f" Bind: 0.0.0.0 (Escuta todas as placas de rede)")
     print(f" Porta: {PORT}")
     print(f" Endpoint: http://localhost:{PORT}/webhook")
