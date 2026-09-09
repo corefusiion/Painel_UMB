@@ -1667,6 +1667,8 @@ body.sidebar-collapsed .sidebar-footer {
     border-radius: 50%;
     display: inline-block;
     flex-shrink: 0;
+}
+
 /* Alerta Operacional Minimalista */
 .saneaia-alert-card {
     background: var(--bg-secondary);
