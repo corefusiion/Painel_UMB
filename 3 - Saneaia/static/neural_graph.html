@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rede Neural de Demandas — SaneaIA Cosmos</title>
+    <script src="/static/vendor/vis-network.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #161a33; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00F0FF; }
+
+        body {
+            background: #04050a;
+            color: #e2e8f0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        /* Área do Grafo com Fundo Cósmico Profundo */
+        #graph-area {
+            flex: 1;
+            height: 100%;
+            position: relative;
+            min-width: 0;
+            background: radial-gradient(circle at 50% 45%, #080d1e 0%, #04050a 85%);
+        }
+        #graph-canvas { width: 100%; height: 100%; display: block; }
+
+        /* Controles Flutuantes Superiores */
+        .floating-controls {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 20;
+            background: rgba(6, 8, 16, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 4px 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .ctrl-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #94A3B8;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+        .ctrl-btn:hover {
+            background: rgba(0, 240, 255, 0.12);
+            color: #00F0FF;
+            border-color: rgba(0, 240, 255, 0.3);
+        }
+        .ctrl-btn.active {
+            background: rgba(0, 240, 255, 0.2);
+            color: #00F0FF;
+            border-color: #00F0FF;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+        }
+
+        /* Banner de Modo Constelação */
+        .mode-banner {
+            position: absolute;
+            top: 16px;
+            right: 340px;
+            z-index: 20;
+            background: rgba(6, 8, 16, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+        .mode-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00F0FF;
+            box-shadow: 0 0 8px #00F0FF;
+            animation: pulse-dot 2s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Seletor de Densidade (Modo Bairro) */
+        .density-selector {
+            display: none;
+            align-items: center;
+            gap: 4px;
+            margin-left: 6px;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            padding-left: 8px;
+        }
+
+        /* Barra Lateral de Detalhes */
+        #sidebar {
+            width: 320px;
+            height: 100%;
+            background: rgba(6, 8, 16, 0.94);
+            backdrop-filter: blur(16px);
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            z-index: 30;
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.6);
+        }
+
+        .sb-header {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .sb-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            letter-spacing: 0.5px;
+        }
+        .sb-subtitle {
+            font-size: 11px;
+            color: #64748B;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Busca Rápida */
+        .search-box {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            position: relative;
+        }
+        .search-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 8px 12px 8px 32px;
+            color: #F8FAFC;
+            font-size: 12px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-input:focus {
+            border-color: #00F0FF;
+            background: rgba(0, 240, 255, 0.04);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.2);
+        }
+        .search-icon {
+            position: absolute;
+            left: 26px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748B;
+            font-size: 12px;
+        }
+
+        /* Painel de Informações do Nó */
+        #info-panel {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #64748B;
+            text-align: center;
+            font-size: 12px;
+            gap: 10px;
+            padding: 20px;
+            line-height: 1.5;
+        }
+        .empty-icon { font-size: 28px; opacity: 0.6; }
+
+        .node-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .nc-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .nc-badge {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .nc-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #FFFFFF;
+            line-height: 1.3;
+        }
+        .nc-stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .nc-stat-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 6px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .nc-stat-val { font-size: 14px; font-weight: 700; color: #00F0FF; }
+        .nc-stat-lbl { font-size: 9px; color: #64748B; text-transform: uppercase; }
+
+        .nc-action-btn {
+            background: rgba(0, 240, 255, 0.12);
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: #00F0FF;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .nc-action-btn:hover {
+            background: rgba(0, 240, 255, 0.25);
+            box-shadow: 0 0 14px rgba(0, 240, 255, 0.3);
+        }
+
+        /* Legenda de Entidades */
+        #legend-wrap {
+            padding: 14px 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .legend-list {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin-top: 8px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #94A3B8;
+            cursor: pointer;
+            padding: 3px 0;
+            transition: color 0.15s;
+        }
+        .legend-item:hover { color: #FFFFFF; }
+        .legend-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+        }
+        .legend-count {
+            font-size: 10px;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        /* Rodapé de Estatísticas */
+        #stats-footer {
+            padding: 10px 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 10px;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Overlay de Carregamento */
+        #loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(4, 5, 10, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            z-index: 50;
+            transition: opacity 0.3s ease;
+        }
+        .spinner {
+            width: 38px;
+            height: 38px;
+            border: 2px solid rgba(0, 240, 255, 0.15);
+            border-top-color: #00F0FF;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { font-size: 12px; color: #94A3B8; letter-spacing: 0.5px; }
+
+        /* Estilo Checkbox da Legenda */
+        .cb {
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            background: transparent;
+        }
+        .cb:checked {
+            background: #00F0FF;
+            border-color: #00F0FF;
+        }
+        .cb:checked::after {
+            content: '✓';
+            position: absolute;
+            color: #06070e;
+            font-size: 10px;
+            font-weight: bold;
+            left: 2px;
+            top: -1px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Área do Grafo Interativo -->
+    <div id="graph-area">
+        <div id="graph-canvas"></div>
+
+        <!-- Controles Superiores -->
+        <div class="floating-controls">
+            <button class="ctrl-btn" id="btn-fit" title="Enquadrar Visão Geral">
+                <span>🔭</span> Enquadrar
+            </button>
+            <button class="ctrl-btn" id="btn-zin" title="Aproximar Zoom">
+                <span>+</span>
+            </button>
+            <button class="ctrl-btn" id="btn-zout" title="Afastar Zoom">
+                <span>−</span>
+            </button>
+            <button class="ctrl-btn" id="btn-reorg" title="Reorganizar Nós com Força Natural">
+                <span>✨</span> Reorganizar
+            </button>
+
+            <!-- Seletor de Densidade (Apenas no Modo Focado de Bairro) -->
+            <div class="density-selector" id="density-group">
+                <span style="font-size: 10px; color: #64748B; margin-right: 4px;">Vias:</span>
+                <button class="ctrl-btn active" id="btn-dens-25" onclick="changeBairroLimit(25)">Top 25</button>
+                <button class="ctrl-btn" id="btn-dens-50" onclick="changeBairroLimit(50)">Top 50</button>
+                <button class="ctrl-btn" id="btn-dens-0" onclick="changeBairroLimit(0)">Todas</button>
+            </div>
+        </div>
+
+        <!-- Banner de Modo Cosmos / Bairro -->
+        <div class="mode-banner" id="mode-banner">
+            <div class="mode-dot" id="mode-dot"></div>
+            <div>
+                <span id="mode-badge" style="font-weight: 700; color: #00F0FF;">Constelação Salvador</span>
+                <span id="mode-desc" style="color: #64748B; margin-left: 4px;">· 15 Bairros Centrais</span>
+            </div>
+            <button class="ctrl-btn" id="mode-switch-btn" style="display: none; padding: 3px 8px; font-size: 10px;" onclick="loadGlobalGraph()">
+                <span>🌐</span> Voltar para Cosmos
+            </button>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay">
+            <div class="spinner"></div>
+            <div class="loading-text" id="loading-txt">Carregando constelação de demandas...</div>
+        </div>
+    </div>
+
+    <!-- Barra Lateral de Informações -->
+    <div id="sidebar">
+        <div class="sb-header">
+            <div class="sb-title">
+                <span>Cosmos de Demandas</span>
+                <span style="font-size: 10px; color: #00F0FF; font-weight: normal;" id="sb-year-badge">2026</span>
+            </div>
+            <div class="sb-subtitle" id="sb-subtitle">
+                <span>✨</span> 15 Planetas Centrais · Vias & OSs Orbitais
+            </div>
+        </div>
+
+        <!-- Campo de Busca Rápida -->
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="search-box" placeholder="Buscar bairro, logradouro ou OS...">
+        </div>
+
+        <!-- Painel de Informações do Nó -->
+        <div id="info-panel">
+            <div class="empty-state" id="info-empty">
+                <div class="empty-icon">🌌</div>
+                <div><b>Mapa Cósmico de Demandas</b>. Cada bairro é um astro principal com suas vias em órbita estelar. Arraste qualquer astro para propagação elástica, ou clique para explorar.</div>
+            </div>
+            <div id="info-details" style="display: none;"></div>
+        </div>
+
+        <!-- Filtros por Tipo de Entidade -->
+        <div id="legend-wrap">
+            <div class="sb-title">
+                <span>Entidades Celestes</span>
+                <label class="sel-all-row" style="margin: 0; display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer;">
+                    <input type="checkbox" class="cb" id="cb-select-all" checked>
+                    <span>Todas</span>
+                </label>
+            </div>
+            <div class="legend-list" id="legend-list"></div>
+        </div>
+
+        <!-- Rodapé com Estatísticas -->
+        <div id="stats-footer">
+            <span id="stats-nodes">Carregando dados...</span>
+            <span id="stats-fps" style="color: #00F0FF; font-weight: 600;">120 FPS Estável</span>
+        </div>
+    </div>
+
+    <script>
+        // ========================================================
+        // PALETA CÓSMICA / MAPA ESTELAR
+        // Planetas em branco/ciano, satélites em azul, OSs pendentes como supernovas vermelhas
+        // ========================================================
+        const TYPE_CONFIG = {
+            bairro: { color: '#FFFFFF', border: '#00F0FF', label: 'Bairros (Astros)', icon: '🪐' },
+            logradouro: { color: '#1E40AF', border: '#38BDF8', label: 'Logradouros (Vias)', icon: '⭐' },
+            matricula: { color: '#92400E', border: '#D97706', label: 'Matrículas', icon: '👤' },
+            os_aberta: { color: '#EF4444', border: '#FFFFFF', label: 'OSs Pendentes', icon: '💥' }
+        };
+
+        // COORDENADAS GALÁCTICAS BASE DOS 15 BAIRROS COM ESPAÇAMENTO GENEROSO
+        // Espaço amplo para evitar sobreposições e deixar cada constelação respirar
+        const GALAXY_BAIRRO_COORDS = [
+            { x: -180, y: -160 }, // 1. Itapuã (Superestrela Rank 1)
+            { x: -310, y: -40  }, // 2. São Cristóvão
+            { x: -140, y: 140  }, // 3. Boca do Rio
+            { x: 10,   y: -230 }, // 4. Itinga
+            { x: 170,  y: -140 }, // 5. Mussurunga
+            { x: 260,  y: 40   }, // 6. Centro
+            { x: -40,  y: -70  }, // 7. Stella Maris
+            { x: 120,  y: 80   }, // 8. Buraquinho
+            { x: 290,  y: -90  }, // 9. Vida Nova
+            { x: -270, y: 120  }, // 10. Alto do Coqueirinho
+            { x: 40,   y: 220  }, // 11. Piatã
+            { x: -80,  y: 260  }, // 12. Caji
+            { x: -350, y: -170 }, // 13. Vila Praiana
+            { x: 190,  y: 210  }, // 14. Ipitanga
+            { x: 330,  y: 160  }  // 15. Pituba
+        ];
+
+        // PONTES DE CONSTELAÇÃO (Linhas celestes finas conectando astros vizinhos - sem fechar contornos)
+        const CONSTELLATION_BRIDGES = [
+            [0, 1],  // Itapuã <-> São Cristóvão
+            [0, 6],  // Itapuã <-> Stella Maris
+            [1, 9],  // São Cristóvão <-> Alto do Coqueirinho
+            [1, 12], // São Cristóvão <-> Vila Praiana
+            [3, 0],  // Itinga <-> Itapuã
+            [3, 4],  // Itinga <-> Mussurunga
+            [4, 8],  // Mussurunga <-> Vida Nova
+            [4, 5],  // Mussurunga <-> Centro
+            [6, 7],  // Stella Maris <-> Buraquinho
+            [7, 5],  // Buraquinho <-> Centro
+            [7, 10], // Buraquinho <-> Piatã
+            [2, 10], // Boca do Rio <-> Piatã
+            [2, 9],  // Boca do Rio <-> Alto do Coqueirinho
+            [10, 11],// Piatã <-> Caji
+            [5, 14], // Centro <-> Pituba
+            [7, 13]  // Buraquinho <-> Ipitanga
+        ];
+
+        let network = null;
+        let nodesDataSet = null;
+        let edgesDataSet = null;
+        let rawNodes = [];
+        let rawEdges = [];
+        let hiddenTypes = new Set();
+        let currentMode = 'global'; // 'global' ou 'bairro'
+        let currentBairroName = null;
+        let currentBairroLimit = 25;
+        let globalDataCache = null;
+        let pulseTime = 0;
+        let animationRunning = false;
+        let activeDragCluster = null;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectedAno = urlParams.get('ano') || '2026';
+
+        document.getElementById('btn-fit').addEventListener('click', fitGraph);
+        document.getElementById('btn-zin').addEventListener('click', zoomIn);
+        document.getElementById('btn-zout').addEventListener('click', zoomOut);
+        document.getElementById('btn-reorg').addEventListener('click', reorganizeForces);
+
+        // ========================================================
+        // 1. CARREGAMENTO DO GRAFO GLOBAL (COSMOS DE DEMANDAS)
+        // ========================================================
+        async function loadGlobalGraph() {
+            showOverlay('Carregando constelação de Salvador...');
+            currentMode = 'global';
+            currentBairroName = null;
+
+            document.getElementById('density-group').style.display = 'none';
+            document.getElementById('mode-badge').textContent = 'Constelação Salvador';
+            document.getElementById('mode-badge').style.color = '#00F0FF';
+            document.getElementById('mode-dot').style.background = '#00F0FF';
+            document.getElementById('mode-desc').textContent = '· 15 Astros Centrais';
+            document.getElementById('mode-switch-btn').style.display = 'none';
+            document.getElementById('sb-subtitle').innerHTML = '<span>✨</span> 15 Planetas Centrais · Vias & OSs Orbitais';
+            resetDetails();
+
+            try {
+                if (globalDataCache) {
+                    renderGraphData(globalDataCache, false);
+                    hideOverlay();
+                    return;
+                }
+                const response = await fetch(`/api/graph/neural?ano=${encodeURIComponent(selectedAno)}`);
+                if (!response.ok) throw new Error('HTTP error: ' + response.status);
+                const data = await response.json();
+                globalDataCache = data;
+                renderGraphData(data, false);
+            } catch (err) {
+                console.error('Erro ao carregar constelação global:', err);
+                showError('Erro ao carregar constelação: ' + err.message);
+            }
+        }
+
+        // ========================================================
+        // 2. MODO FOCADO EM BAIRRO (ESTRELA CENTRAL E SUAS VIAS)
+        // ========================================================
+        async function loadBairroGraph(bairroName, limit = 25) {
+            showOverlay(`Carregando vias de ${bairroName}...`);
+            currentMode = 'bairro';
+            currentBairroName = bairroName;
+            currentBairroLimit = limit;
+
+            const densGroup = document.getElementById('density-group');
+            densGroup.style.display = 'flex';
+            ['btn-dens-25', 'btn-dens-50', 'btn-dens-0'].forEach(id => {
+                document.getElementById(id).classList.remove('active');
+            });
+            const activeBtnId = limit === 0 ? 'btn-dens-0' : (limit === 50 ? 'btn-dens-50' : 'btn-dens-25');
+            document.getElementById(activeBtnId).classList.add('active');
+
+            document.getElementById('mode-badge').textContent = 'Astro Focado';
+            document.getElementById('mode-badge').style.color = '#38BDF8';
+            document.getElementById('mode-desc').textContent = `${bairroName}`;
+            document.getElementById('mode-switch-btn').style.display = 'block';
+            resetDetails();
+
+            try {
+                const url = `/api/graph/bairro?bairro=${encodeURIComponent(bairroName)}&ano=${encodeURIComponent(selectedAno)}&limit=${limit}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('HTTP error: ' + response.status);
+                const data = await response.json();
+
+                renderGraphData(data, true);
+
+                const exibidas = (data.stats && data.stats.ruas_exibidas) || (data.nodes.filter(n => n.type === 'logradouro').length);
+                const totalRuas = (data.stats && data.stats.total_ruas) || exibidas;
+                document.getElementById('sb-subtitle').textContent = `${bairroName} · Exibindo ${exibidas} de ${totalRuas} vias`;
+                document.getElementById('btn-dens-0').textContent = `Todas (${totalRuas})`;
+            } catch (err) {
+                console.error('Erro ao carregar vias do bairro:', err);
+                showError(`Erro ao carregar vias de ${bairroName}: ` + err.message);
+            }
+        }
+
+        function changeBairroLimit(limit) {
+            if (currentBairroName) {
+                loadBairroGraph(currentBairroName, limit);
+            }
+        }
+
+        // ========================================================
+        // 3. RENDERIZADOR CÓSMICO (SEM FORMAS FECHADAS, ANCORAGEM LOCAL RÍGIDA)
+        // ========================================================
+        function renderGraphData(data, isBairroMode) {
+            const apiNodes = data.nodes || [];
+            const apiLinks = data.links || [];
+
+            // Deduplicação estrita de nós
+            const seenNodeIds = new Set();
+            const uniqueNodes = [];
+            for (const n of apiNodes) {
+                if (!n.id || seenNodeIds.has(n.id)) continue;
+                seenNodeIds.add(n.id);
+                uniqueNodes.push(n);
+            }
+
+            // Mapa de busca de nós e conexões para garantir paternidade estrita
+            const parentOfNode = new Map();
+            apiLinks.forEach(l => {
+                if (l.target && l.source) {
+                    parentOfNode.set(l.target, l.source);
+                }
+            });
+
+            // 1. Posições Base dos Planetas (Bairros)
+            const bairroPositions = {};
+            const bairros = uniqueNodes.filter(n => n.type === 'bairro');
+            if (!isBairroMode) {
+                bairros.sort((a, b) => (a.rank || 999) - (b.rank || 999));
+                bairros.forEach((b, i) => {
+                    const pos = GALAXY_BAIRRO_COORDS[i % GALAXY_BAIRRO_COORDS.length];
+                    bairroPositions[b.name] = { x: pos.x, y: pos.y };
+                    bairroPositions[b.id] = { x: pos.x, y: pos.y };
+                });
+            } else {
+                const bCentral = bairros[0];
+                if (bCentral) {
+                    bairroPositions[bCentral.name] = { x: 0, y: 0 };
+                    bairroPositions[bCentral.id] = { x: 0, y: 0 };
+                }
+            }
+
+            // 2. Posições dos Logradouros (Estrelas Menores Orbitais)
+            const logradouroPositions = {};
+            const streetCountsByB = {};
+            uniqueNodes.filter(n => n.type === 'logradouro').forEach(s => {
+                const b = s.bairro || '';
+                streetCountsByB[b] = (streetCountsByB[b] || 0) + 1;
+            });
+            const streetIdxByB = {};
+
+            uniqueNodes.filter(n => n.type === 'logradouro').forEach((n, idx) => {
+                const b = n.bairro || '';
+                const bPos = bairroPositions[b] || { x: 0, y: 0 };
+                const totalInB = streetCountsByB[b] || 1;
+                const sIdx = streetIdxByB[b] || 0;
+                streetIdxByB[b] = sIdx + 1;
+
+                const ang = (sIdx / Math.max(1, totalInB)) * 2 * Math.PI + (idx * 0.35);
+                const dist = isBairroMode ? (130 + (sIdx % 3) * 50) : (44 + (sIdx % 3) * 14);
+                const posX = bPos.x + Math.cos(ang) * dist;
+                const posY = bPos.y + Math.sin(ang) * dist;
+                logradouroPositions[n.name] = { x: posX, y: posY };
+                logradouroPositions[n.id] = { x: posX, y: posY };
+            });
+
+            // 3. Posições de Referência Consolidadas
+            const nodePositions = {};
+            uniqueNodes.forEach(n => {
+                if (n.type === 'bairro') {
+                    nodePositions[n.id] = bairroPositions[n.name] || { x: 0, y: 0 };
+                } else if (n.type === 'logradouro') {
+                    nodePositions[n.id] = logradouroPositions[n.name] || { x: 0, y: 0 };
+                }
+            });
+
+            // 4. Mapeamento dos Nós com Posição Inicial Fielmente Amarrada ao Pai
+            rawNodes = uniqueNodes.map((n, idx) => {
+                const cfg = TYPE_CONFIG[n.type] || { color: '#888', border: '#555' };
+                let size = 5.5;
+                let fontSize = 0;
+                let posX = 0, posY = 0;
+
+                if (n.type === 'bairro') {
+                    // Astro Principal: Branco brilhante com glow ciano
+                    size = isBairroMode ? 32 : Math.min(Math.max(Math.sqrt(n.count || 1) * 1.3, 18), 32);
+                    fontSize = 12;
+                    const bPos = bairroPositions[n.name] || { x: 0, y: 0 };
+                    posX = bPos.x;
+                    posY = bPos.y;
+                } else if (n.type === 'logradouro') {
+                    // Satélites Orbitais: Pequenos pontos azuis
+                    // Global: fontSize = 0 (SEM labels poluidoras!)
+                    // Bairro: fontSize = 9 (labels espaçadas e legíveis)
+                    size = isBairroMode ? Math.min(Math.max(Math.sqrt(n.count || 1) * 1.5, 6), 11) : 5.5;
+                    fontSize = isBairroMode ? 9 : 0;
+                    const lPos = logradouroPositions[n.name] || { x: 0, y: 0 };
+                    posX = lPos.x;
+                    posY = lPos.y;
+                } else if (n.type === 'matricula') {
+                    // Matrículas: micro-pontos em âmbar sutil, amarrados ao pai
+                    size = 3.5;
+                    fontSize = 0;
+                    const parentId = parentOfNode.get(n.id);
+                    const pPos = (parentId && nodePositions[parentId]) || bairroPositions[n.bairro] || { x: 0, y: 0 };
+                    const mAng = (idx * 1.37) % (Math.PI * 2);
+                    const mDist = 20 + (idx % 3) * 6;
+                    posX = pPos.x + Math.cos(mAng) * mDist;
+                    posY = pPos.y + Math.sin(mAng) * mDist;
+                    nodePositions[n.id] = { x: posX, y: posY };
+                } else if (n.type === 'os_aberta') {
+                    // SUPERNOVA PENDENTE: Amarrada colada e vizinha imediata do pai (NUNCA no canto da tela!)
+                    size = 8;
+                    fontSize = 0;
+                    const parentId = parentOfNode.get(n.id);
+                    const pPos = (parentId && nodePositions[parentId]) || bairroPositions[n.bairro] || { x: 0, y: 0 };
+                    const osAng = (idx * 1.8) % (Math.PI * 2);
+                    const osDist = 22 + (idx % 2) * 8; // Distância curtíssima (22 a 30px)
+                    posX = pPos.x + Math.cos(osAng) * osDist;
+                    posY = pPos.y + Math.sin(osAng) * osDist;
+                    nodePositions[n.id] = { x: posX, y: posY };
+                }
+
+                return {
+                    id: n.id,
+                    label: n.name,
+                    title: `${n.name} (${(n.count || 1).toLocaleString('pt-BR')} OSs)`,
+                    x: posX,
+                    y: posY,
+                    size: size,
+                    fixed: { x: true, y: true }, // Travado em repouso
+                    color: {
+                        background: cfg.color,
+                        border: cfg.border,
+                        highlight: { background: '#ffffff', border: cfg.border },
+                        hover: { background: '#ffffff', border: cfg.border }
+                    },
+                    font: {
+                        size: fontSize,
+                        color: n.type === 'bairro' ? '#FFFFFF' : (n.type === 'os_aberta' ? '#EF4444' : '#94A3B8'),
+                        face: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        strokeWidth: fontSize > 0 ? (n.type === 'bairro' ? 3 : 2) : 0,
+                        strokeColor: '#04050a'
+                    },
+                    type: n.type,
+                    count: n.count || 1,
+                    rank: n.rank || null,
+                    total_ruas: n.total_ruas || null,
+                    bairro: n.bairro || '',
+                    raw: n
+                };
+            });
+
+            // Conexões estelares válidas
+            const seenEdgePairs = new Set();
+            const validLinks = [];
+            for (const l of apiLinks) {
+                if (!l.source || !l.target) continue;
+                if (!seenNodeIds.has(l.source) || !seenNodeIds.has(l.target)) continue;
+                const pairKey = l.source + '->' + l.target;
+                if (seenEdgePairs.has(pairKey)) continue;
+                seenEdgePairs.add(pairKey);
+                validLinks.push(l);
+            }
+
+            // Adicionar Linhas de Constelação entre Bairros vizinhos (estilo mapa celeste / Órion)
+            const constellationLinks = [];
+            if (!isBairroMode && bairros.length >= 2) {
+                CONSTELLATION_BRIDGES.forEach(([i1, i2]) => {
+                    if (bairros[i1] && bairros[i2]) {
+                        constellationLinks.push({
+                            source: bairros[i1].id,
+                            target: bairros[i2].id,
+                            value: 1,
+                            type: 'constellation'
+                        });
+                    }
+                });
+            }
+
+            const allLinks = [...validLinks, ...constellationLinks];
+
+            rawEdges = allLinks.map((l, i) => {
+                const isPending = (l.type === 'mat_os' || l.type === 'log_os' || l.type === 'bairro_os');
+                const isConstellation = (l.type === 'constellation');
+                const isBairroLog = (l.type === 'bairro_log');
+
+                let edgeWidth = 0.4;
+                let edgeColor = 'rgba(56, 189, 248, 0.12)';
+                let edgeLength = 40;
+                let dashes = false;
+
+                if (isPending) {
+                    edgeWidth = 1.8;
+                    edgeColor = '#EF4444';
+                    edgeLength = 22; // Super curta: mantém a supernova colada ao pai
+                    dashes = true;
+                } else if (isConstellation) {
+                    edgeWidth = 0.8;
+                    edgeColor = 'rgba(56, 189, 248, 0.18)'; // Linha de constelação fina e discreta
+                    edgeLength = 170;
+                    dashes = [4, 6]; // Pontilhada estilo mapa celeste
+                } else if (isBairroLog) {
+                    edgeWidth = 0.6;
+                    edgeColor = 'rgba(56, 189, 248, 0.14)';
+                    edgeLength = isBairroMode ? 65 : 44;
+                }
+
+                return {
+                    id: 'e_' + i,
+                    from: l.source,
+                    to: l.target,
+                    length: edgeLength,
+                    width: edgeWidth,
+                    dashes: dashes,
+                    smooth: isConstellation ? false : {
+                        type: (i % 2 === 0) ? 'curvedCW' : 'curvedCCW',
+                        roundness: isPending ? 0.15 : 0.14
+                    },
+                    color: {
+                        color: edgeColor,
+                        highlight: isPending ? '#FF4D4D' : '#38BDF8',
+                        hover: isPending ? '#FF4D4D' : '#38BDF8',
+                        opacity: isPending ? 0.9 : (isConstellation ? 0.22 : 0.14)
+                    },
+                    type: l.type,
+                    isPending: isPending
+                };
+            });
+
+            nodesDataSet = new vis.DataSet(rawNodes);
+            edgesDataSet = new vis.DataSet(rawEdges);
+
+            const container = document.getElementById('graph-canvas');
+
+            const options = {
+                nodes: {
+                    shape: 'dot',
+                    scaling: { min: 4, max: 34 }
+                },
+                edges: {
+                    arrows: { to: { enabled: false } },
+                    hoverWidth: 1.5,
+                    selectionWidth: 2
+                },
+                physics: {
+                    enabled: true,
+                    solver: 'forceAtlas2Based',
+                    forceAtlas2Based: {
+                        gravitationalConstant: isBairroMode ? -24 : -180, // Repulsão generosa: espaçamento confortável
+                        centralGravity: 0.005,
+                        springLength: isBairroMode ? 65 : 160,
+                        springConstant: 0.04,
+                        damping: 0.88,
+                        avoidOverlap: 0.85
+                    },
+                    stabilization: {
+                        enabled: true,
+                        iterations: 140,
+                        updateInterval: 25
+                    }
+                },
+                interaction: {
+                    hover: true,
+                    tooltipDelay: 100,
+                    hideEdgesOnDrag: false,
+                    zoomView: true,
+                    dragView: true,
+                    dragNodes: true
+                }
+            };
+
+            if (network) {
+                network.destroy();
+                network = null;
+            }
+
+            network = new vis.Network(container, { nodes: nodesDataSet, edges: edgesDataSet }, options);
+
+            // Hook de Fundo Cósmico (SEM elipses, SEM formas fechadas)
+            network.on('beforeDrawing', (ctx) => {
+                drawCosmicBackground(ctx);
+            });
+
+            // Hook Frontal de Animação Estelar (Micro-respiração + Partículas)
+            network.on('afterDrawing', (ctx) => {
+                drawCosmicEffects(ctx);
+            });
+
+            // ========================================================
+            // EVENTOS DE INTERAÇÃO
+            // ========================================================
+            network.on('click', (params) => {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    const node = rawNodes.find(n => n.id === nodeId);
+                    if (node) showNodeDetails(node);
+                } else {
+                    resetDetails();
+                }
+            });
+
+            network.on('doubleClick', (params) => {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    const node = rawNodes.find(n => n.id === nodeId);
+                    if (node && node.type === 'bairro') {
+                        loadBairroGraph(node.label || node.name, 25);
+                    }
+                }
+            });
+
+            // ========================================================
+            // FÍSICA SELETIVA NO DRAG (Acompanhamento Elástico Amortecido)
+            // ========================================================
+            network.on('dragStart', (params) => {
+                if (params.nodes && params.nodes.length > 0) {
+                    const draggedId = params.nodes[0];
+                    
+                    const directNeighbors = network.getConnectedNodes(draggedId);
+                    const clusterSet = new Set(directNeighbors);
+                    directNeighbors.forEach(nid => {
+                        network.getConnectedNodes(nid).forEach(subId => {
+                            if (subId !== draggedId) clusterSet.add(subId);
+                        });
+                    });
+
+                    activeDragCluster = Array.from(clusterSet);
+
+                    if (activeDragCluster.length > 0) {
+                        nodesDataSet.update(activeDragCluster.map(id => ({ id, fixed: false })));
+                        
+                        network.setOptions({
+                            physics: {
+                                enabled: true,
+                                solver: 'forceAtlas2Based',
+                                forceAtlas2Based: {
+                                    gravitationalConstant: isBairroMode ? -22 : -28,
+                                    centralGravity: 0.004,
+                                    springLength: isBairroMode ? 60 : 44,
+                                    springConstant: 0.08,
+                                    damping: 0.88,
+                                    avoidOverlap: 0.7
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+
+            network.on('dragEnd', (params) => {
+                if (activeDragCluster && activeDragCluster.length > 0) {
+                    const clusterToFreeze = activeDragCluster;
+                    activeDragCluster = null;
+
+                    setTimeout(() => {
+                        if (nodesDataSet) {
+                            nodesDataSet.update(clusterToFreeze.map(id => ({ id, fixed: { x: true, y: true } })));
+                        }
+                        if (network) {
+                            network.setOptions({ physics: { enabled: false } });
+                        }
+                    }, 250);
+                }
+            });
+
+            function freezeInitial() {
+                if (network && nodesDataSet) {
+                    const allIds = nodesDataSet.getIds();
+                    nodesDataSet.update(allIds.map(id => ({ id, fixed: { x: true, y: true } })));
+                    network.setOptions({ physics: { enabled: false } });
+                }
+                hideOverlay();
+            }
+
+            network.once('stabilizationIterationsDone', freezeInitial);
+            setTimeout(freezeInitial, 1000);
+
+            // ========================================================
+            // ZOOM LEVEL OF DETAIL (LoD): Rótulos de Logradouros
+            // ========================================================
+            let logradouroLabelsVisible = false;
+            network.on('zoom', (params) => {
+                if (currentMode === 'bairro') return; // No modo bairro já estão sempre visíveis
+                const scale = params.scale;
+                const shouldShow = scale >= 1.5;
+                if (shouldShow !== logradouroLabelsVisible) {
+                    logradouroLabelsVisible = shouldShow;
+                    if (nodesDataSet) {
+                        const updates = [];
+                        rawNodes.forEach(n => {
+                            if (n.type === 'logradouro') {
+                                updates.push({
+                                    id: n.id,
+                                    font: {
+                                        size: shouldShow ? 9 : 0,
+                                        color: '#94A3B8',
+                                        face: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                                        strokeWidth: shouldShow ? 2 : 0,
+                                        strokeColor: '#04050a'
+                                    }
+                                });
+                            }
+                        });
+                        nodesDataSet.update(updates);
+                    }
+                }
+            });
+
+            buildLegend(rawNodes);
+            setupSearch(rawNodes);
+            updateStatsFooter();
+            startContinuousLoop();
+        }
+
+        // ========================================================
+        // CAMADA DE FUNDO CÓSMICA (SEM FORMAS FECHADAS, SEM ELIPSES)
+        // ========================================================
+        function drawCosmicBackground(ctx) {
+            if (!network || currentMode === 'bairro') return;
+            // Fundo espacial 100% livre e limpo, sem contorno ou elipses de contenção
+        }
+
+        // ========================================================
+        // CAMADA FRONTAL CÓSMICA (Aura Bioluminescente + Supernovas + Poeira)
+        // ========================================================
+        function drawCosmicEffects(ctx) {
+            if (!network) return;
+            const positions = network.getPositions();
+
+            ctx.save();
+
+            // 1. Pulsação e Brilho das Estrelas (Bairros e Vias)
+            rawNodes.forEach((n, idx) => {
+                if (n.type === 'matricula') return; // Matrículas sem aura para manter discrição
+                const pos = positions[n.id];
+                if (!pos) return;
+
+                const seed = idx * 37 + (n.label ? n.label.length * 11 : 0);
+                const freq = 1.4 + (seed % 6) * 0.15;
+                const phase = (seed % 100) * 0.08;
+
+                const breathDelta = Math.sin(pulseTime * freq + phase);
+                const breathRadius = (n.size || 6) + (n.type === 'bairro' ? 4.5 : 1.4) + breathDelta * 1.5;
+                const auraAlpha = n.type === 'bairro' 
+                    ? (0.16 + 0.08 * breathDelta) 
+                    : (0.05 + 0.03 * breathDelta);
+
+                const auraColor = n.type === 'bairro' ? '#00F0FF' : (n.type === 'os_aberta' ? '#EF4444' : '#38BDF8');
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, breathRadius, 0, Math.PI * 2);
+                ctx.fillStyle = auraColor + Math.floor(auraAlpha * 255).toString(16).padStart(2, '0');
+                ctx.fill();
+            });
+
+            // 2. Supernovas Pendentes (Alertas em Vermelho Rubi Conectados de Perto)
+            const pendingEdges = rawEdges.filter(e => e.isPending);
+            pendingEdges.forEach((edge, idx) => {
+                const p1 = positions[edge.from];
+                const p2 = positions[edge.to];
+                if (!p1 || !p2) return;
+
+                const midX = (p1.x + p2.x) / 2;
+                const midY = (p1.y + p2.y) / 2;
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                const nx = -dy / dist;
+                const ny = dx / dist;
+                const curveOffset = (idx % 2 === 0 ? 1 : -1) * (dist * 0.15);
+                const cpX = midX + nx * curveOffset;
+                const cpY = midY + ny * curveOffset;
+
+                // Linha de alerta rubi pulsante
+                const glowAlpha = 0.20 + 0.14 * Math.sin(pulseTime * 2.8 + idx);
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.quadraticCurveTo(cpX, cpY, p2.x, p2.y);
+                ctx.strokeStyle = `rgba(239, 68, 68, ${glowAlpha})`;
+                ctx.lineWidth = 2.0;
+                ctx.stroke();
+
+                // Pulso de onda luminosa no destino (Supernova)
+                const waveRadius = 7 + (Math.sin(pulseTime * 3.2 + idx) + 1) * 3.5;
+                ctx.beginPath();
+                ctx.arc(p2.x, p2.y, waveRadius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(239, 68, 68, ${0.4 - (waveRadius / 15) * 0.3})`;
+                ctx.lineWidth = 1.0;
+                ctx.stroke();
+            });
+
+            ctx.restore();
+        }
+
+        // ========================================================
+        // 4. LOOP CONTÍNUO (120 FPS ESTÁVEL)
+        // ========================================================
+        function startContinuousLoop() {
+            if (animationRunning) return;
+            animationRunning = true;
+            let lastTimestamp = performance.now();
+
+            function frame(now) {
+                const delta = Math.min((now - lastTimestamp) / 1000, 0.05);
+                lastTimestamp = now;
+                pulseTime += delta;
+
+                if (network) {
+                    network.redraw();
+                }
+                requestAnimationFrame(frame);
+            }
+            requestAnimationFrame(frame);
+        }
+
+        // ========================================================
+        // 5. INTERFACE, DETALHES E BUSCA
+        // ========================================================
+        function showNodeDetails(n) {
+            const panel = document.getElementById('info-details');
+            const empty = document.getElementById('info-empty');
+            empty.style.display = 'none';
+            panel.style.display = 'flex';
+
+            const cfg = TYPE_CONFIG[n.type] || { color: '#888', label: n.type, icon: '•' };
+
+            let statsHtml = '';
+            let actionHtml = '';
+
+            if (n.type === 'bairro') {
+                statsHtml = `
+                    <div class="nc-stat-grid">
+                        <div class="nc-stat-box">
+                            <span class="nc-stat-val">${(n.count || 0).toLocaleString('pt-BR')}</span>
+                            <span class="nc-stat-lbl">OSs no Ano</span>
+                        </div>
+                        <div class="nc-stat-box">
+                            <span class="nc-stat-val">#${n.rank || '—'}</span>
+                            <span class="nc-stat-lbl">Posição Ranking</span>
+                        </div>
+                    </div>
+                `;
+                actionHtml = `
+                    <button class="nc-action-btn" onclick="loadBairroGraph('${n.label || n.name}', 25)">
+                        <span>🔍</span> Explorar Constelação de Vias
+                    </button>
+                `;
+            } else if (n.type === 'logradouro') {
+                statsHtml = `
+                    <div class="nc-stat-grid">
+                        <div class="nc-stat-box">
+                            <span class="nc-stat-val">${(n.count || 0).toLocaleString('pt-BR')}</span>
+                            <span class="nc-stat-lbl">Volume de OSs</span>
+                        </div>
+                        <div class="nc-stat-box">
+                            <span class="nc-stat-val" style="font-size: 11px;">${n.bairro || '—'}</span>
+                            <span class="nc-stat-lbl">Bairro</span>
+                        </div>
+                    </div>
+                `;
+            } else if (n.type === 'os_aberta') {
+                statsHtml = `
+                    <div class="nc-stat-grid">
+                        <div class="nc-stat-box" style="border-color: rgba(239, 68, 68, 0.4);">
+                            <span class="nc-stat-val" style="color: #EF4444;">EM ABERTO</span>
+                            <span class="nc-stat-lbl">Status</span>
+                        </div>
+                        <div class="nc-stat-box">
+                            <span class="nc-stat-val" style="font-size: 11px;">${n.bairro || '—'}</span>
+                            <span class="nc-stat-lbl">Bairro</span>
+                        </div>
+                    </div>
+                `;
+            } else if (n.type === 'matricula') {
+                statsHtml = `
+                    <div class="nc-stat-grid">
+                        <div class="nc-stat-box">
+                            <span class="nc-stat-val" style="color: #D97706;">${n.count || 0}</span>
+                            <span class="nc-stat-lbl">Reincidências</span>
+                        </div>
+                        <div class="nc-stat-box">
+                            <span class="nc-stat-val" style="font-size: 11px;">${n.bairro || '—'}</span>
+                            <span class="nc-stat-lbl">Bairro</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            panel.innerHTML = `
+                <div class="node-card">
+                    <div class="nc-header">
+                        <span class="nc-badge" style="background: ${cfg.color}22; color: ${cfg.color}; border: 1px solid ${cfg.color}44;">
+                            ${cfg.icon} ${cfg.label}
+                        </span>
+                    </div>
+                    <div class="nc-name">${escapeHtml(n.label || n.name)}</div>
+                    ${statsHtml}
+                    ${actionHtml}
+                </div>
+            `;
+        }
+
+        function resetDetails() {
+            document.getElementById('info-details').style.display = 'none';
+            document.getElementById('info-empty').style.display = 'flex';
+        }
+
+        function buildLegend(nodes) {
+            const counts = {};
+            nodes.forEach(n => { counts[n.type] = (counts[n.type] || 0) + 1; });
+
+            const list = document.getElementById('legend-list');
+            list.innerHTML = '';
+
+            Object.entries(TYPE_CONFIG).forEach(([type, cfg]) => {
+                const count = counts[type] || 0;
+                const isChecked = !hiddenTypes.has(type);
+
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.innerHTML = `
+                    <div class="legend-left">
+                        <input type="checkbox" class="cb cb-type" data-type="${type}" ${isChecked ? 'checked' : ''}>
+                        <div class="legend-dot" style="background: ${cfg.color}; box-shadow: 0 0 6px ${cfg.color}88;"></div>
+                        <span>${cfg.label}</span>
+                    </div>
+                    <span class="legend-count">${count}</span>
+                `;
+
+                item.querySelector('.cb-type').addEventListener('change', (e) => {
+                    toggleTypeVisibility(type, e.target.checked);
+                });
+
+                list.appendChild(item);
+            });
+
+            document.getElementById('cb-select-all').addEventListener('change', (e) => {
+                const checked = e.target.checked;
+                document.querySelectorAll('.cb-type').forEach(cb => {
+                    cb.checked = checked;
+                    toggleTypeVisibility(cb.dataset.type, checked, false);
+                });
+                applyVisibilityFilter();
+            });
+        }
+
+        function toggleTypeVisibility(type, visible, applyNow = true) {
+            if (visible) {
+                hiddenTypes.delete(type);
+            } else {
+                hiddenTypes.add(type);
+            }
+            if (applyNow) applyVisibilityFilter();
+        }
+
+        function applyVisibilityFilter() {
+            if (!nodesDataSet) return;
+            const updates = rawNodes.map(n => ({
+                id: n.id,
+                hidden: hiddenTypes.has(n.type)
+            }));
+            nodesDataSet.update(updates);
+            updateStatsFooter();
+        }
+
+        function setupSearch(nodes) {
+            const input = document.getElementById('search-box');
+            input.addEventListener('input', (e) => {
+                const q = e.target.value.trim().toLowerCase();
+                if (!q) {
+                    resetDetails();
+                    return;
+                }
+                const match = nodes.find(n => (n.label || n.name || '').toLowerCase().includes(q));
+                if (match && network) {
+                    network.focus(match.id, {
+                        scale: 1.6,
+                        animation: { duration: 600, easingFunction: 'easeInOutQuad' }
+                    });
+                    network.selectNodes([match.id]);
+                    showNodeDetails(match);
+                }
+            });
+        }
+
+        function updateStatsFooter() {
+            if (!rawNodes) return;
+            const visibleCount = rawNodes.filter(n => !hiddenTypes.has(n.type)).length;
+            document.getElementById('stats-nodes').textContent = `${visibleCount} de ${rawNodes.length} astros visíveis`;
+        }
+
+        function fitGraph() {
+            if (network) network.fit({ animation: { duration: 600, easingFunction: 'easeInOutQuad' } });
+        }
+        function zoomIn() {
+            if (network) network.moveTo({ scale: network.getScale() * 1.3, animation: { duration: 300 } });
+        }
+        function zoomOut() {
+            if (network) network.moveTo({ scale: network.getScale() * 0.7, animation: { duration: 300 } });
+        }
+
+        function reorganizeForces() {
+            if (!network || !nodesDataSet) return;
+            const allIds = nodesDataSet.getIds();
+            nodesDataSet.update(allIds.map(id => ({ id, fixed: false })));
+            network.setOptions({
+                physics: {
+                    enabled: true,
+                    solver: 'forceAtlas2Based',
+                    forceAtlas2Based: {
+                        gravitationalConstant: currentMode === 'bairro' ? -24 : -180,
+                        centralGravity: 0.005,
+                        springLength: currentMode === 'bairro' ? 65 : 160,
+                        springConstant: 0.04,
+                        damping: 0.88,
+                        avoidOverlap: 0.85
+                    }
+                }
+            });
+            setTimeout(() => {
+                nodesDataSet.update(allIds.map(id => ({ id, fixed: { x: true, y: true } })));
+                network.setOptions({ physics: { enabled: false } });
+            }, 1200);
+        }
+
+        function showOverlay(txt) {
+            const el = document.getElementById('loading-overlay');
+            document.getElementById('loading-txt').textContent = txt;
+            el.style.display = 'flex';
+            el.style.opacity = '1';
+        }
+        function hideOverlay() {
+            const el = document.getElementById('loading-overlay');
+            el.style.opacity = '0';
+            setTimeout(() => { el.style.display = 'none'; }, 300);
+        }
+        function showError(msg) {
+            hideOverlay();
+            alert(msg);
+        }
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', loadGlobalGraph);
+        } else {
+            loadGlobalGraph();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+{
+  "status": "online",
+  "status_detail": "Concluído: Nenhuma pendência nova encontrada.",
+  "progress_pct": 100,
+  "last_run": "2026-08-06T07:21:35.373079",
+  "next_run": "2026-08-06T08:23:02.728080",
+  "thread_status": {
+    "Vazamento": "❌ Erro: Message: Unable to locate element: ",
+    "Pavimento": "❌ Erro: Message: Unable to locate element: ",
+    "Falta d'Água": "❌ Erro: Message: Unable to locate element: ",
+    "Carro Pipa": "❌ Erro: Message: Unable to locate element: "
+  },
+  "db_confirmed": false,
+  "success_summary": "✅ Extração concluída. Nenhum registro novo encontrado no período informado.",
+  "today_extractions": 0,
+  "today_date": "2026-08-06",
+  "metrics": {
+    "total_downloads": 0,
+    "uploads_ok": 0,
+    "uploads_error": 0,
+    "last_duration": null
+  }
+}

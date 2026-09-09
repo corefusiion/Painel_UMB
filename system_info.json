@@ -1,0 +1,15 @@
+﻿{
+  "system_name": "Painel Operacional UMB & SaneaIA",
+  "version": "2.4.0",
+  "developer": "Gleisson Santos",
+  "organization": "EMBASA - Empresa Baiana de Águas e Saneamento S.A.",
+  "department": "UMB (Unidade Metropolitana de Salvador / Buraquinho)",
+  "classification": "CONFIDENCIAL / PROPRIETÁRIO - USO INTERNO",
+  "license": "MIT",
+  "year": 2026,
+  "compliance": {
+    "lgpd": "Lei Geral de Proteção de Dados (Lei 13.709/2018)",
+    "data_retention": "Armazenamento local restrito com rotinas de expurgo seguro",
+    "architecture": "Microsserviços desacoplados (React, Node.js, FastAPI, SQLite)"
+  }
+}

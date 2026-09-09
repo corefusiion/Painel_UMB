@@ -1,0 +1,1 @@
+{"accuracy": 77.51, "precision": 78.03, "recall": 98.5, "last_trained": "2026-09-08T11:34:48.090717", "samples_used": 50216, "algorithm": "Random Forest (Scikit-Learn)"}

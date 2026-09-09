@@ -1,0 +1,37 @@
+# Environment
+.env
+.env.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+
+# ML models
+ml/models/*.joblib
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Node (dashboard)
+dashboard/node_modules/
+dashboard/.next/
+dashboard/out/
+
+# Logs
+*.log
+
+# Dados de Desenvolvimento local
+desenvolvimento/
+Base dados UMB/
+dados_entrada/

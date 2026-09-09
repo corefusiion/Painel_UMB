@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  saneala-api:
+    build: .
+    container_name: saneala-api
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    # O comando python main.py já é o default no Dockerfile
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

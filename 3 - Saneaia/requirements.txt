@@ -1,0 +1,33 @@
+# === Backend (FastAPI) ===
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+httpx==0.27.0
+pydantic-settings==2.5.0
+python-dotenv==1.0.1
+
+# === Machine Learning ===
+
+# === Database ===
+
+# === Backend (FastAPI) ===
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+httpx==0.27.0
+pydantic-settings==2.5.0
+python-dotenv==1.0.1
+
+# === Machine Learning ===
+scikit-learn
+pandas
+numpy
+
+# === Database ===
+
+
+# === Agendamento ===
+apscheduler==3.10.4
+
+# === Utilitários ===
+openpyxl==3.1.2
+loguru==0.7.2  
+ 

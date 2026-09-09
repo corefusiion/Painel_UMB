@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma de Inteligência Operacional - Saneamento</title>
+    <meta name="description"
+        content="Dashboard inteligente para gestão operacional de saneamento com IA e Machine Learning">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/dashboard.css?v=12">
+    <style>
+        /* CRITICAL INLINE STYLES TO BYPASS CACHE */
+        .bi-ranking-item {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 8px 0 !important;
+            border-bottom: 1px solid var(--border-subtle) !important;
+            background: transparent !important;
+            border-radius: 0 !important;
+            border-top: none !important;
+            border-left: none !important;
+            border-right: none !important;
+        }
+        .bi-ranking-item:last-child {
+            border-bottom: none !important;
+        }
+        .bi-diag-item {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 4px !important;
+            padding: 14px 0 !important;
+            border-bottom: 1px solid var(--border-subtle) !important;
+        }
+        .bi-diag-item:last-child {
+            border-bottom: none !important;
+            padding-bottom: 0 !important;
+        }
+        .bi-diag-title {
+            font-size: 0.9rem !important;
+            font-weight: 700 !important;
+            color: var(--text-primary) !important;
+        }
+        .bi-diag-text {
+            font-size: 0.8rem !important;
+            color: var(--text-muted) !important;
+            line-height: 1.5 !important;
+            padding-left: 8px !important;
+            border-left: 2px solid var(--border-subtle) !important;
+        }
+        .bi-action-item {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 4px !important;
+            padding: 14px 0 !important;
+            border-bottom: 1px solid var(--border-subtle) !important;
+        }
+        .bi-action-item:last-child {
+            border-bottom: none !important;
+            padding-bottom: 0 !important;
+        }
+        .bi-action-title {
+            font-size: 0.9rem !important;
+            font-weight: 700 !important;
+            color: var(--text-primary) !important;
+        }
+        .bi-action-priority {
+            font-size: 0.75rem !important;
+            font-weight: 600 !important;
+            color: var(--text-muted) !important;
+            text-transform: uppercase !important;
+        }
+        .bi-action-desc {
+            font-size: 0.8rem !important;
+            color: var(--text-muted) !important;
+            line-height: 1.5 !important;
+            padding-left: 8px !important;
+            border-left: 2px solid var(--border-subtle) !important;
+        }
+    </style>
+
+
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <!-- Botão de toggle embutido na borda da sidebar -->
+        <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" title="Recolher / Expandir Menu">
+            <svg class="toggle-arrow" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s ease;"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+
+        <nav class="sidebar-nav" style="padding-top: 1.25rem;">
+            <a href="#" class="nav-item active" data-section="dashboard" id="nav-dashboard">
+                <i data-lucide="layout-dashboard" class="nav-icon"></i>
+                <span class="nav-label">Dashboard</span>
+            </a>
+            <a href="#" class="nav-item" data-section="insights" id="nav-insights">
+                <i data-lucide="brain" class="nav-icon"></i>
+                <span class="nav-label">Insights IA</span>
+            </a>
+            <a href="#" class="nav-item" data-section="agent" id="nav-agent">
+                <i data-lucide="bot" class="nav-icon"></i>
+                <span class="nav-label">Agente IA</span>
+            </a>
+            <a href="#" class="nav-item" data-section="logs-rum" id="nav-logs-rum">
+                <i data-lucide="terminal" class="nav-icon"></i>
+                <span class="nav-label">Logs RUM</span>
+            </a>
+            <a href="#" class="nav-item" data-section="analytics" id="nav-analytics">
+                <i data-lucide="trending-up" class="nav-icon"></i>
+                <span class="nav-label">Analytics</span>
+            </a>
+            <a href="#" class="nav-item" data-section="tabela" id="nav-tabela">
+                <i data-lucide="table" class="nav-icon"></i>
+                <span class="nav-label">Tabela Geral</span>
+            </a>
+            <a href="#" class="nav-item" data-section="ml" id="nav-ml">
+                <i data-lucide="settings" class="nav-icon"></i>
+                <span class="nav-label">Machine Learning</span>
+            </a>
+            <a href="#" class="nav-item" data-section="heatmaps" id="nav-heatmaps">
+                <i data-lucide="flame" class="nav-icon"></i>
+                <span class="nav-label">Mapa de Calor</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="system-status">
+                <span class="status-dot" id="status-dot"></span>
+                <span class="status-text" id="status-text">Conectando...</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <h2 class="page-title" id="page-title">Dashboard</h2>
+            </div>
+
+            <div class="topbar-right">
+                <!-- Year Filters -->
+                <div class="year-filters" id="year-filters-container"
+                    style="display: flex; gap: 4px; margin-right: 16px; align-items: center;">
+                    <span class="text-sm"
+                        style="color: var(--text-muted); margin-right: 8px; font-size: 0.85rem;">Filtro Ano:</span>
+                    <!-- Buttons will be injected here via JS -->
+                </div>
+
+                <button class="btn-refresh" id="btn-refresh" onclick="loadAll()" title="Atualizar dados">
+                    <i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i>
+                </button>
+                <span class="topbar-time" id="topbar-time">00/00/0000, 00:00:00</span>
+            </div>
+        </header>
+
+        <!-- Dashboard Section -->
+        <section class="content-section active" id="section-dashboard">
+            <!-- KPI Cards -->
+            <div class="kpi-grid" id="kpi-grid">
+                <div class="kpi-card kpi-total">
+                    <div class="kpi-icon"><i data-lucide="file-text"></i></div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Total Solicitações</span>
+                        <span class="kpi-value" id="kpi-total">--</span>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-resolved">
+                    <div class="kpi-icon"><i data-lucide="check-circle"></i></div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Concluídas Executadas</span>
+                        <span class="kpi-value" id="kpi-resolved">--</span>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-open">
+                    <div class="kpi-icon"><i data-lucide="alert-circle"></i></div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Em Aberto</span>
+                        <span class="kpi-value" id="kpi-open">--</span>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-neighborhoods">
+                    <div class="kpi-icon"><i data-lucide="map-pin"></i></div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Bairros Ativos</span>
+                        <span class="kpi-value" id="kpi-neighborhoods">--</span>
+                    </div>
+                </div>
+                <div class="kpi-card kpi-clients">
+                    <div class="kpi-icon"><i data-lucide="users"></i></div>
+                    <div class="kpi-info">
+                        <span class="kpi-label">Matrículas Únicas</span>
+                        <span class="kpi-value" id="kpi-clients">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evolução Anual (Line Chart) -->
+            <div class="table-card" style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
+                <h3 class="chart-title"><i data-lucide="trending-up"
+                        style="width: 16px; height: 16px; margin-right: 8px; vertical-align: middle;"></i> Evolução
+                    Anual (Contraste de Demandas)</h3>
+                <div class="chart-container" style="height: 300px; padding-top: 10px;">
+                    <canvas id="chart-evolucao-anual"></canvas>
+                </div>
+            </div>
+
+            <!-- Territorial Insights: Top Bairros & Logradouros Críticos -->
+            <div class="charts-row">
+                <div class="chart-card">
+                    <h3 class="chart-title"><i data-lucide="map-pin"
+                            style="width: 16px; height: 16px; margin-right: 8px; color: #3B82F6; vertical-align: middle;"></i>
+                        Top 10 Bairros | Solicitações</h3>
+                    <div class="chart-container" id="chart-bairros" style="max-height: 320px; overflow-y: auto; padding-right: 4px;"></div>
+                </div>
+                <div class="chart-card">
+                    <h3 class="chart-title"><i data-lucide="navigation"
+                            style="width: 16px; height: 16px; margin-right: 8px; color: #F59E0B; vertical-align: middle;"></i>
+                        Logradouros Críticos | Maior Volume</h3>
+                    <div class="chart-container" id="table-ruas-criticas" style="max-height: 320px; overflow-y: auto;">
+                        <div class="loading-state">Carregando logradouros críticos...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Priorização Humanizada: Imóveis Sensíveis (Saúde, Educação e Social) -->
+            <div class="table-card" style="margin-top: 1.5rem; margin-bottom: 1.5rem; border-top: 3px solid #EF4444;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; gap: 8px;">
+                    <div>
+                        <h3 class="chart-title" style="margin-bottom: 2px;">
+                            <i data-lucide="shield-alert" style="width: 18px; height: 18px; margin-right: 8px; color: #EF4444; vertical-align: middle;"></i>
+                            Priorização Humanizada — Imóveis Sensíveis (Saúde, Educação & Social)
+                            <span id="badge-sensivel-periodo" style="font-size: 0.76rem; color: var(--text-muted); font-weight: 600; margin-left: 6px;">(Ano: 2026)</span>
+                        </h3>
+                        <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0;">Rastreamento contínuo de hospitais, postos de saúde, escolas, creches e asilos com sugestão de abastecimento alternativo.</p>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <span id="badge-pipa-count" class="badge-tag" style="background: #FEE2E2; color: #991B1B; font-weight: 700; font-size: 0.78rem; padding: 5px 12px; border-radius: 9999px;">
+                            🚨 Carro Pipa Preventivo Sugerido
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Mini KPIs dos Imóveis Sensíveis -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 1rem;">
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 36px; height: 36px; border-radius: 8px; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="heart-pulse" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Saúde (Hospitais/UPAs)</div>
+                            <div id="kpi-sensivel-saude" style="font-size: 1.25rem; font-weight: 800; color: #DC2626;">--</div>
+                        </div>
+                    </div>
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 36px; height: 36px; border-radius: 8px; background: #DBEAFE; color: #2563EB; display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="graduation-cap" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Educação (Escolas/Creches)</div>
+                            <div id="kpi-sensivel-educ" style="font-size: 1.25rem; font-weight: 800; color: #2563EB;">--</div>
+                        </div>
+                    </div>
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 36px; height: 36px; border-radius: 8px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center;">
+                            <i data-lucide="users" style="width: 20px; height: 20px;"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Social (Asilos/Abrigos)</div>
+                            <div id="kpi-sensivel-social" style="font-size: 1.25rem; font-weight: 800; color: #D97706;">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabela das Ocorrências Sensíveis -->
+                <div style="max-height: 260px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;" id="table-imoveis-sensiveis">
+                        <thead style="background: var(--bg-card); position: sticky; top: 0; border-bottom: 1px solid var(--border-color);">
+                            <tr>
+                                <th style="padding: 8px 12px; text-align: left;">SS / Matrícula</th>
+                                <th style="padding: 8px 12px; text-align: left;">Categoria</th>
+                                <th style="padding: 8px 12px; text-align: left;">Bairro & Logradouro</th>
+                                <th style="padding: 8px 12px; text-align: left;">Situação</th>
+                                <th style="padding: 8px 12px; text-align: left;">Ação Recomendada</th>
+                                <th style="padding: 8px 12px; text-align: left;">Observação da Demanda</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-imoveis-sensiveis">
+                            <tr><td colspan="6" style="padding: 16px; text-align: center; color: var(--text-muted);">Carregando instituições sensíveis...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+            <!-- Gráficos Avançados: Histograma de Densidade (KDE) & Gráfico Dumbbell -->
+            <div class="charts-row" style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
+                <div class="chart-card">
+                    <h3 class="chart-title">
+                        <i data-lucide="bar-chart-2" style="width: 16px; height: 16px; margin-right: 8px; color: #6366F1; vertical-align: middle;"></i>
+                        Distribuição Diária de Demandas (Histograma + Densidade KDE)
+                    </h3>
+                    <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: -6px; margin-bottom: 8px;">Frequência de dias por faixa de solicitações com curva de densidade estimada.</p>
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="chart-histograma-densidade"></canvas>
+                    </div>
+                    <div id="histogram-insight-box" style="margin-top: 8px; font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; background: var(--bg-card); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
+                        Concentração típica: A maioria dos dias opera na faixa de 16 a 35 solicitações diárias.
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h3 class="chart-title">
+                        <i data-lucide="git-commit" style="width: 16px; height: 16px; margin-right: 8px; color: #10B981; vertical-align: middle;"></i>
+                        Variação de Demanda por Bairro (Gráfico Dumbbell / Halteres)
+                    </h3>
+                    <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: -6px; margin-bottom: 8px;">Comparativo do GAP de volume (Julho vs Agosto) nos Top 10 bairros.</p>
+                    <div class="chart-container" id="container-dumbbell-chart" style="height: 275px; overflow-y: auto; padding-right: 4px;">
+                        <div class="loading-state">Carregando comparativo dumbbell...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weather Analytics & Inteligência Climática -->
+            <div class="table-card weather-analytics-card" style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; gap: 8px;">
+                    <h3 class="chart-title" style="margin-bottom: 0;">
+                        <i data-lucide="cloud-sun" style="width: 18px; height: 18px; margin-right: 8px; color: #F59E0B; vertical-align: middle;"></i>
+                        Inteligência Climática & Previsão de Demanda (Weather Analytics)
+                    </h3>
+                    <span class="badge-tag" style="background: #FEF3C7; color: #92400E; font-weight: 600; font-size: 0.78rem; padding: 4px 10px; border-radius: 9999px;">
+                        <i data-lucide="map-pin" style="width: 12px; height: 12px; margin-right: 4px; display: inline;"></i> Salvador & Lauro de Freitas
+                    </span>
+                </div>
+
+                <!-- Barra de Previsão 7 Dias (Open-Meteo) -->
+                <div class="weather-forecast-grid" id="weather-forecast-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.25rem;">
+                    <!-- Injetado dinamicamente via JS -->
+                </div>
+
+                <!-- Parecer Preditivo da IA SaneaIA -->
+                <div class="weather-ai-banner" id="weather-ai-banner" style="background: var(--bg-card); border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 8px; margin-bottom: 1.25rem; border: 1px solid var(--border-color); border-left-width: 4px;">
+                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #D97706; font-size: 0.88rem; margin-bottom: 4px;">
+                        <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i> Diagnóstico Meteorológico Preditivo (SaneaIA ML)
+                    </div>
+                    <p id="weather-ai-text" style="font-size: 0.84rem; color: var(--text-color); margin: 0; line-height: 1.45;">Carregando análise preditiva do clima...</p>
+                </div>
+
+                <!-- Gráficos Integrados: Correlação Térmica vs Demanda -->
+                <div style="margin-bottom: 0;">
+                    <div class="chart-card" style="box-shadow: none; border: 1px solid var(--border-color); background: transparent;">
+                        <h4 style="font-size: 0.88rem; font-weight: 600; color: var(--text-color); margin-bottom: 8px;">
+                            <i data-lucide="activity" style="width: 15px; height: 15px; margin-right: 6px; color: #EF4444; vertical-align: middle;"></i>
+                            Correlação Térmica: Temperatura Média vs Volume Histórico de Solicitações
+                        </h4>
+                        <div class="chart-container" style="height: 260px;">
+                            <canvas id="chart-clima-correlacao"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Insights Section -->
+        <section class="content-section" id="section-insights">
+            <div class="saneaia-dashboard">
+                <!-- Cabeçalho -->
+                <div class="saneaia-header-card">
+                    <div class="saneaia-header-left">
+                        <h2>Relatório Geral</h2>
+                        <p>Diagnóstico preditivo baseado nas ordens de serviço, reincidências, localização e histórico operacional.</p>
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 4px;">
+                            <span class="saneaia-info-text">Período analisado: 01/01/2026 → Atual</span>
+                            <span class="saneaia-info-text">Fonte: Última Tramitação das OS</span>
+                        </div>
+                    </div>
+                    <div class="saneaia-header-right">
+                        <div class="insights-timestamp-badge" id="saneaia-last-update">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span id="saneaia-last-update-text">Sem análise salva</span>
+                        </div>
+                        <div class="insights-actions-row">
+                            <button class="btn-secondary" id="btn-nlp-analysis">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                Analisar Observações
+                            </button>
+                            <button class="btn-primary" id="btn-generate-insights">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                                Gerar Novos Insights
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visão Geral -->
+                <h3 class="saneaia-section-title">Visão Geral</h3>
+
+                <div class="saneaia-card saneaia-col-3 bi-kpi-card">
+                    <div class="bi-kpi-label">Volume Anual</div>
+                    <div class="kpi-number" id="bi-kpi-total">--</div>
+                    <div class="kpi-subtext" style="color:var(--text-muted);">Ordens de serviço em 2026</div>
+                    <div class="kpi-micro">Base histórica consolidada</div>
+                </div>
+
+                <div class="saneaia-card saneaia-col-3 bi-kpi-card">
+                    <div class="bi-kpi-label">Executadas</div>
+                    <div class="kpi-number" id="bi-kpi-exec">--</div>
+                    <div class="kpi-subtext" style="color:#16A34A;" id="bi-kpi-exec-pct">--% de execução</div>
+                    <div class="kpi-micro">Atendidas em campo</div>
+                    <div class="saneaia-progress-bg">
+                        <div class="saneaia-progress-bar" id="bi-bar-exec" style="background:#16A34A; width:0%;"></div>
+                    </div>
+                </div>
+
+                <div class="saneaia-card saneaia-col-3 bi-kpi-card">
+                    <div class="bi-kpi-label">Não Executadas</div>
+                    <div class="kpi-number" id="bi-kpi-nexec">--</div>
+                    <div class="kpi-subtext" style="color:#D97706;" id="bi-kpi-nexec-pct">--% da operação</div>
+                    <div class="kpi-micro">Improcedentes ou canceladas</div>
+                    <div class="saneaia-progress-bg">
+                        <div class="saneaia-progress-bar" id="bi-bar-nexec" style="background:#D97706; width:0%;"></div>
+                    </div>
+                </div>
+
+                <div class="saneaia-card saneaia-col-3 bi-kpi-card">
+                    <div class="bi-kpi-label">Pendências Ativas</div>
+                    <div class="kpi-number" style="color:#DC2626;" id="bi-kpi-pend">--</div>
+                    <div class="kpi-subtext" style="color:#DC2626;">Aguardando execução em campo</div>
+                    <div class="kpi-micro" id="bi-kpi-pend-pct">--% da base atual</div>
+                </div>
+
+                <!-- Gráficos -->
+                <div class="saneaia-card saneaia-col-8">
+                    <div class="bi-card-header">
+                        <div class="bi-card-title">Evolução Operacional</div>
+                        <div class="bi-card-sub">Distribuição mensal de OS no período vigente</div>
+                    </div>
+                    <div style="position:relative; height:250px; width:100%;">
+                        <canvas id="canvas-bi-evolucao" style="display:block; width:100% !important; height:100% !important;"></canvas>
+                    </div>
+                </div>
+
+                <div class="saneaia-card saneaia-col-4">
+                    <div class="bi-card-header">
+                        <div class="bi-card-title">Saúde Operacional</div>
+                        <div class="bi-card-sub">Composição por situação de encerramento</div>
+                    </div>
+                    <div class="saneaia-donut-container">
+                        <canvas id="canvas-bi-donut" style="max-width:175px; max-height:175px;"></canvas>
+                        <div class="saneaia-donut-center">
+                            <h4 id="bi-donut-center-val">--</h4>
+                            <p>% executadas</p>
+                        </div>
+                    </div>
+                    <div class="saneaia-donut-legend">
+                        <div class="saneaia-donut-legend-item">
+                            <span class="saneaia-donut-dot" style="background:#16A34A;"></span>
+                            <div>
+                                <div style="font-size:1.1rem;font-weight:800;color:#16A34A;" id="bi-legend-exec">--</div>
+                                <div style="font-size:0.72rem;color:var(--text-muted);">Executadas</div>
+                            </div>
+                        </div>
+                        <div class="saneaia-donut-legend-item">
+                            <span class="saneaia-donut-dot" style="background:#F59E0B;"></span>
+                            <div>
+                                <div style="font-size:1.1rem;font-weight:800;color:#F59E0B;" id="bi-legend-nexec">--</div>
+                                <div style="font-size:0.72rem;color:var(--text-muted);">Não Exec.</div>
+                            </div>
+                        </div>
+                        <div class="saneaia-donut-legend-item">
+                            <span class="saneaia-donut-dot" style="background:#DC2626;"></span>
+                            <div>
+                                <div style="font-size:1.1rem;font-weight:800;color:#DC2626;" id="bi-legend-pend">--</div>
+                                <div style="font-size:0.72rem;color:var(--text-muted);">Pendentes</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Análise Mensal -->
+                <div class="saneaia-section-header saneaia-col-12" style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; margin-bottom: 0.5rem; padding: 0;">
+                    <h3 class="saneaia-section-title" style="margin: 0;">Análise Mensal — <span id="bi-mes-label">Agosto/2026</span></h3>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <select id="select-bi-mes" class="year-filter-btn" style="padding: 6px 12px; font-weight: 500; font-size: 0.82rem; border-radius: 6px; background-color: #ffffff; border: 1px solid var(--border-color); outline: none; cursor: pointer;">
+                            <option value="1">Janeiro</option>
+                            <option value="2">Fevereiro</option>
+                            <option value="3">Março</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Maio</option>
+                            <option value="6">Junho</option>
+                            <option value="7">Julho</option>
+                            <option value="8">Agosto</option>
+                            <option value="9" selected>Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                        <select id="select-bi-ano" class="year-filter-btn" style="padding: 6px 12px; font-weight: 500; font-size: 0.82rem; border-radius: 6px; background-color: #ffffff; border: 1px solid var(--border-color); outline: none; cursor: pointer;">
+                            <option value="2024">2024</option>
+                            <option value="2025">2025</option>
+                            <option value="2026" selected>2026</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="saneaia-card saneaia-col-3 bi-kpi-card">
+                    <div class="bi-kpi-label">Total no Mês</div>
+                    <div class="kpi-number" style="font-size:2rem;" id="bi-mes-total">--</div>
+                    <div class="kpi-micro">Ordens registradas no período</div>
+                </div>
+
+                <div class="saneaia-card saneaia-col-3 bi-kpi-card">
+                    <div class="bi-kpi-label">Concluídas Executadas</div>
+                    <div class="kpi-number" style="color:#16A34A;font-size:2rem;" id="bi-mes-exec">--</div>
+                    <div class="kpi-micro">Atendimentos concluídos</div>
+                    <div class="saneaia-progress-bg" style="margin-top:8px;">
+                        <div class="saneaia-progress-bar" id="bi-mes-bar-exec" style="background:#16A34A;width:0%;"></div>
+                    </div>
+                </div>
+
+                <div class="saneaia-card saneaia-col-3 bi-kpi-card">
+                    <div class="bi-kpi-label">Não Executadas</div>
+                    <div class="kpi-number" style="color:#D97706;font-size:2rem;" id="bi-mes-nexec">--</div>
+                    <div class="kpi-micro">Canceladas ou improcedentes</div>
+                    <div class="saneaia-progress-bg" style="margin-top:8px;">
+                        <div class="saneaia-progress-bar" id="bi-mes-bar-nexec" style="background:#D97706;width:0%;"></div>
+                    </div>
+                </div>
+
+                <div class="saneaia-card saneaia-col-3 bi-kpi-card">
+                    <div class="bi-kpi-label">Em Aberto</div>
+                    <div class="kpi-number" style="color:#DC2626;font-size:2rem;" id="bi-mes-pend">--</div>
+                    <div class="kpi-micro">Aguardando execução</div>
+                </div>
+
+                <!-- Concentração de Demandas -->
+                <h3 class="saneaia-section-title">Concentração de Demandas</h3>
+
+                <div class="saneaia-card saneaia-col-4">
+                    <div class="bi-card-header">
+                        <div class="bi-card-title">Bairros Críticos</div>
+                        <div class="bi-card-sub">Maior volume de solicitações</div>
+                    </div>
+                    <div id="bi-ranking-bairros">
+                        <div class="loading-state" style="padding:1rem; font-size:0.85rem;">Aguardando análise...</div>
+                    </div>
+                </div>
+
+                <div class="saneaia-card saneaia-col-4">
+                    <div class="bi-card-header">
+                        <div class="bi-card-title">Logradouros Críticos</div>
+                        <div class="bi-card-sub">Endereços com maior recorrência</div>
+                    </div>
+                    <div id="bi-ranking-ruas">
+                        <div class="loading-state" style="padding:1rem; font-size:0.85rem;">Aguardando análise...</div>
+                    </div>
+                </div>
+
+                <div class="saneaia-card saneaia-col-4">
+                    <div class="bi-card-header">
+                        <div class="bi-card-title">Serviços Predominantes</div>
+                        <div class="bi-card-sub">Tipos com maior frequência</div>
+                    </div>
+                    <div id="bi-ranking-servicos">
+                        <div class="loading-state" style="padding:1rem; font-size:0.85rem;">Aguardando análise...</div>
+                    </div>
+                </div>
+
+
+
+
+
+                <!-- Motor Análise de sentimento -->
+                <h3 class="saneaia-section-title">Motor Análise de sentimento</h3>
+                <p class="saneaia-info-text saneaia-col-12" style="margin-top:-10px;">Varredura das observações de campo para classificação de sentimento, urgência e localização.</p>
+
+                <div class="saneaia-col-12" id="nlp-results">
+                    <div class="saneaia-card" style="align-items:center; justify-content:center; min-height:100px;">
+                        <span class="saneaia-info-text">Clique em "Analisar Observações" para iniciar a análise de sentimentos (Mensal vs Anual).</span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- Agent Chat Section -->
+        <section class="content-section" id="section-agent">
+            <div class="chat-container">
+                <!-- Sidebar de Conversas -->
+                <div class="chat-sidebar">
+                    <button class="btn-new-chat" id="btn-new-chat">
+                        <i data-lucide="plus" style="width: 16px; height: 16px; margin-right: 4px;"></i> Nova conversa
+                    </button>
+                    <div class="conversations-list" id="conversations-list">
+                        <!-- Inserido dinamicamente pelo JS -->
+                    </div>
+                </div>
+
+                <!-- Chat Principal -->
+                <div class="chat-main">
+                    <div class="chat-header">
+                        <div class="chat-avatar"><i data-lucide="bot" style="width: 24px; height: 24px;"></i></div>
+                        <div class="chat-info">
+                            <h3 id="chat-title-header">Agente de Análise de Dados</h3>
+                            <span class="chat-status">Inteligência Operacional</span>
+                        </div>
+                        <div class="chat-header-actions" id="chat-header-actions" style="display: none;">
+                            <button class="btn-chat-action" id="btn-pin-chat" title="Fixar/Desafixar Conversa">
+                                <i data-lucide="pin" style="width: 16px; height: 16px;"></i>
+                            </button>
+                            <button class="btn-chat-action" id="btn-rename-chat" title="Renomear Conversa">
+                                <i data-lucide="edit-2" style="width: 16px; height: 16px;"></i>
+                            </button>
+                            <button class="btn-chat-action btn-danger" id="btn-delete-chat" title="Excluir Conversa">
+                                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="message bot-message">
+                            <div class="message-avatar"><i data-lucide="bot" style="width: 20px; height: 20px;"></i></div>
+                            <div class="message-content">
+                                Posso analisar os dados operacionais do projeto, identificar reincidências, comparar períodos, localizar matrículas críticas e gerar análises com base nos dados disponíveis. Em que posso ajudar com a operação hoje?
+                                <br><br>
+                                Exemplos de perguntas:
+                                <ul>
+                                    <li>"Quais matrículas tiveram mais reincidências em agosto?"</li>
+                                    <li>"Me mostre os 10 clientes com maior reincidência este mês."</li>
+                                    <li>"Quais OS estão não conformes com o POP?"</li>
+                                    <li>"Quais são os endereços mais críticos atualmente?"</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <div class="chat-input-wrapper">
+                            <textarea class="chat-textarea" id="chat-input" rows="1" placeholder="Digite sua pergunta..." autocomplete="off"></textarea>
+                            <button class="btn-submit-chat" id="btn-send" aria-label="Enviar pergunta">
+                                <i data-lucide="arrow-up" style="width: 16px; height: 16px;"></i>
+                            </button>
+                        </div>
+                        <div class="chat-input-info">Pressione Enter para enviar, Shift+Enter para nova linha. SaneaIA Inteligência Operacional.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Analytics Section -->
+        <section class="content-section" id="section-analytics">
+            <!-- Header do Analytics -->
+            <div class="table-card" style="margin-bottom: 1.25rem; background: linear-gradient(135deg, var(--bg-card) 0%, rgba(37,99,235,0.05) 100%); border-left: 4px solid #2563EB;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--text-color); margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
+                            Analytics Operacional & Inteligência de Campo
+                            <span id="badge-analytics-ano" class="badge-tag" style="background: #DBEAFE; color: #1E40AF; font-weight: 700; font-size: 0.76rem; padding: 3px 10px; border-radius: 9999px;">(Ano: 2026)</span>
+                        </h2>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">
+                            Auditoria técnica de conformidade POP 01, diagnóstico de causas de desabastecimento, tempos de resposta (SLA) e eficiência das equipes.
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="btn-secondary" onclick="loadAnalytics(globalYearFilter)" style="padding: 6px 12px; font-size: 0.82rem;">
+                            <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Atualizar Dados
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4 KPIs Analíticos Estratégicos -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                <!-- KPI 1: Conformidade POP -->
+                <div class="table-card" style="padding: 1rem 1.25rem; border-top: 3px solid #10B981;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Conformidade Geral POP 01</span>
+                        <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; background: rgba(16,185,129,0.1); color: #10B981; font-weight: 700;">Qualidade</span>
+                    </div>
+                    <div id="analytics-kpi-pop" style="font-size: 1.65rem; font-weight: 800; color: var(--text-color); margin: 4px 0;">--</div>
+                    <div id="analytics-kpi-pop-sub" style="font-size: 0.78rem; color: var(--text-muted);">Carregando auditoria...</div>
+                </div>
+
+                <!-- KPI 2: SLA Atendimento vs Execução -->
+                <div class="table-card" style="padding: 1rem 1.25rem; border-top: 3px solid #3B82F6;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Tempo Médio Atendimento (SLA)</span>
+                        <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; background: rgba(59,130,246,0.1); color: #3B82F6; font-weight: 700;">Despacho</span>
+                    </div>
+                    <div id="analytics-kpi-sla" style="font-size: 1.65rem; font-weight: 800; color: var(--text-color); margin: 4px 0;">--</div>
+                    <div id="analytics-kpi-sla-sub" style="font-size: 0.78rem; color: var(--text-muted);">Execução no local: --</div>
+                </div>
+
+                <!-- KPI 3: Efetividade pós-execução -->
+                <div class="table-card" style="padding: 1rem 1.25rem; border-top: 3px solid #8B5CF6;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Efetividade da Visita</span>
+                        <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; background: rgba(139,92,246,0.1); color: #8B5CF6; font-weight: 700;">Normalização</span>
+                    </div>
+                    <div id="analytics-kpi-efetividade" style="font-size: 1.65rem; font-weight: 800; color: var(--text-color); margin: 4px 0;">--</div>
+                    <div id="analytics-kpi-efetividade-sub" style="font-size: 0.78rem; color: var(--text-muted);">Normalizado imediatamente</div>
+                </div>
+
+                <!-- KPI 4: Causa Raiz Predominante -->
+                <div class="table-card" style="padding: 1rem 1.25rem; border-top: 3px solid #F59E0B;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Causa Raiz Predominante</span>
+                        <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; background: rgba(245,158,11,0.1); color: #F59E0B; font-weight: 700;">Campo</span>
+                    </div>
+                    <div id="analytics-kpi-causa" style="font-size: 1.25rem; font-weight: 800; color: var(--text-color); margin: 6px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">--</div>
+                    <div id="analytics-kpi-causa-sub" style="font-size: 0.78rem; color: var(--text-muted);">Principal motivo apontado</div>
+                </div>
+            </div>
+
+            <!-- Linha 1: Causas Raiz & Auditoria POP 01 (Grid de 2 colunas) -->
+            <div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.25rem; margin-bottom: 1.25rem;">
+                <!-- Card 1: Causas Técnicas de Falta d'Água (col-6) -->
+                <div class="chart-card" style="grid-column: span 6; display: flex; flex-direction: column;">
+                    <div class="bi-card-header">
+                        <div class="bi-card-title">Causas Técnicas de Falta d'Água (Diagnóstico de Campo)</div>
+                        <div class="bi-card-sub">Motivos apontados pelas equipes técnicas durante o atendimento no local</div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 12px; padding: 0.5rem 0;">
+                        <div style="position: relative; height: 230px; width: 100%;">
+                            <canvas id="chart-causas-falta"></canvas>
+                        </div>
+                        <div id="container-motivos-list" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem;">
+                            <!-- Preenchido dinamicamente via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Auditoria e Falhas do POP 01 (col-6) -->
+                <div class="chart-card" style="grid-column: span 6; display: flex; flex-direction: column;">
+                    <div class="bi-card-header">
+                        <div class="bi-card-title">Aderência ao POP 01 & Diagnóstico de Não-Conformidade</div>
+                        <div class="bi-card-sub">Auditoria dos 4 requisitos regulatórios (Pressão, Leitura vizinhos, Fotos e Parecer)</div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: center; padding: 0.5rem 0;">
+                        <div style="position: relative; height: 210px; width: 100%;">
+                            <canvas id="chart-pop-conformidade"></canvas>
+                        </div>
+                        <div id="container-pop-falhas" style="display: flex; flex-direction: column; gap: 8px; font-size: 0.8rem;">
+                            <!-- Preenchido dinamicamente via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Linha 2: Equipes Executoras & Pressão Hidráulica (Grid de 2 colunas: col-7 e col-5) -->
+            <div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.25rem; margin-bottom: 1.25rem;">
+                <!-- Card 3: Produtividade & Conformidade das Equipes (col-7) -->
+                <div class="chart-card" style="grid-column: span 7; display: flex; flex-direction: column;">
+                    <div class="bi-card-header">
+                        <div class="bi-card-title">Ranking de Produtividade & Conformidade por Equipe</div>
+                        <div class="bi-card-sub">Volume de ordens executadas e taxa de preenchimento correto do POP</div>
+                    </div>
+                    <div class="table-container" id="table-equipes-analytics" style="flex: 1; max-height: 320px; overflow-y: auto;">
+                        <div class="loading-state">Carregando métricas das equipes...</div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Perfil de Pressão Hidráulica no Hidrômetro (col-5) -->
+                <div class="chart-card" style="grid-column: span 5; display: flex; flex-direction: column;">
+                    <div class="bi-card-header">
+                        <div class="bi-card-title">Perfil de Pressão Hidráulica (mca)</div>
+                        <div class="bi-card-sub">Medições aferidas no hidrômetro pelo manômetro da equipe</div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; justify-content: center; height: 100%; padding: 0.5rem 0;">
+                        <div id="container-pressao-bars" style="display: flex; flex-direction: column; gap: 14px;">
+                            <!-- Preenchido dinamicamente via JS -->
+                        </div>
+                        <div style="margin-top: 14px; padding: 10px; border-radius: 8px; background: var(--bg-hover); font-size: 0.76rem; color: var(--text-muted); line-height: 1.4;">
+                            ℹ️ <strong>Referência Regulamentar:</strong> Pressão mínima exigida em rede pública pela ABNT/AGERSA é de <strong>10 mca</strong>. Medições abaixo de 5 mca configuram interrupção fática de fornecimento.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Linha 3: Reincidência, NLP e Segurança (3 colunas de col-4) -->
+            <div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.25rem;">
+                <!-- Top Matrículas Reincidentes (col-4) -->
+                <div class="chart-card" style="grid-column: span 4; display: flex; flex-direction: column;">
+                    <div class="bi-card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="bi-card-title">Top Matrículas Reincidentes</div>
+                            <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #B45309; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 6px;">Interativo</span>
+                        </div>
+                        <div class="bi-card-sub">Imóveis com maior recorrência · <span style="color: #2563EB; font-weight: 600;">Clique para abrir detalhes e logradouro ▾</span></div>
+                    </div>
+                    <div class="table-container" id="table-top-matriculas" style="flex: 1; max-height: 400px; overflow-y: auto;">
+                        <div class="loading-state">Carregando matrículas reincidentes...</div>
+                    </div>
+                </div>
+
+                <!-- Logradouros Críticos por Sentimento (NLP) (col-4) -->
+                <div class="chart-card" style="grid-column: span 4; display: flex; flex-direction: column;">
+                    <div class="bi-card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="bi-card-title">Logradouros Críticos por Sentimento</div>
+                            <span class="badge-tag" style="background: rgba(239, 68, 68, 0.12); color: #DC2626; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 6px;">NLP</span>
+                        </div>
+                        <div class="bi-card-sub">Matriz de criticidade minerada nas queixas e observações de campo</div>
+                    </div>
+                    <div class="table-container" id="table-logradouros-nlp" style="flex: 1; max-height: 400px; overflow-y: auto;">
+                        <div class="loading-state">Minerando sentimentos NLP...</div>
+                    </div>
+                </div>
+
+                <!-- Histórico de Furtos de Hidrômetro por Mês (col-4) -->
+                <div class="chart-card" style="grid-column: span 4; display: flex; flex-direction: column;">
+                    <div class="bi-card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="bi-card-title">Furtos de Hidrômetro por Mês</div>
+                            <span class="badge-tag" style="background: rgba(220, 38, 38, 0.12); color: #DC2626; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 6px;">Segurança</span>
+                        </div>
+                        <div class="bi-card-sub">Evolução mensal de ocorrências registradas</div>
+                    </div>
+                    <!-- Mini painel resumo analítico de furtos -->
+                    <div id="furtos-summary-strip" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; padding: 8px 10px; background: var(--bg-hover); border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 8px; text-align: center;">
+                        <div>
+                            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Total Ano</div>
+                            <div id="furtos-kpi-total" style="font-weight: 800; font-size: 1.05rem; color: #DC2626;">--</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Mês Pico</div>
+                            <div id="furtos-kpi-pico" style="font-weight: 700; font-size: 0.85rem; color: var(--text-color); margin-top: 2px;">--</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase;">Média Mês</div>
+                            <div id="furtos-kpi-media" style="font-weight: 700; font-size: 0.85rem; color: var(--text-color); margin-top: 2px;">--</div>
+                        </div>
+                    </div>
+                    <div id="furtos-top-bairros" style="font-size: 0.74rem; color: var(--text-muted); line-height: 1.35; margin-bottom: 8px; padding: 0 4px;">
+                        Carregando bairros afetados...
+                    </div>
+                    <div class="chart-container" style="flex: 1; position: relative; min-height: 250px; height: 100%;">
+                        <canvas id="chart-furtos-hd" style="display: block; width: 100% !important; height: 100% !important;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tabela Geral Section -->
+        <section class="content-section" id="section-tabela">
+            <div class="table-card" style="padding: 1.5rem;">
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+                    <div style="flex: 1; min-width: 280px; position: relative;">
+                        <input type="text" id="tabela-search-input" placeholder="🔍 Pesquisar por SS, Matrícula, Bairro, Logradouro, Serviço, Obs..." 
+                            style="width: 100%; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); font-size: 0.9rem;"
+                            onkeyup="onTabelaSearchChange(event)">
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <select id="tabela-filter-ano" onchange="loadTabelaGeral(1)" style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); font-size: 0.85rem;">
+                            <option value="Todos">Ano: Todos</option>
+                            <option value="2026">2026</option>
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                            <option value="2023">2023</option>
+                        </select>
+
+                        <select id="tabela-filter-mes" onchange="loadTabelaGeral(1)" style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); font-size: 0.85rem;">
+                            <option value="Todos">Mês: Todos</option>
+                            <option value="01">Jan</option>
+                            <option value="02">Fev</option>
+                            <option value="03">Mar</option>
+                            <option value="04">Abr</option>
+                            <option value="05">Mai</option>
+                            <option value="06">Jun</option>
+                            <option value="07">Jul</option>
+                            <option value="08">Ago</option>
+                            <option value="09">Set</option>
+                            <option value="10">Out</option>
+                            <option value="11">Nov</option>
+                            <option value="12">Dez</option>
+                        </select>
+
+                        <select id="tabela-filter-situacao" onchange="loadTabelaGeral(1)" style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); font-size: 0.85rem;">
+                            <option value="Todos">Situação: Todas</option>
+                            <option value="Concluída Executada">Concluída Executada</option>
+                            <option value="Concluída Não Executada">Concluída Não Executada</option>
+                            <option value="Aberta e Programada">Aberta e Programada</option>
+                        </select>
+                        
+                        <select id="tabela-filter-detalhes" onchange="loadTabelaGeral(1)" style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); font-size: 0.85rem;">
+                            <option value="Todos">Detalhes: Todos</option>
+                            <option value="Sim">Apenas com Detalhes</option>
+                            <option value="Nao">Apenas sem Detalhes</option>
+                        </select>
+                        
+                        <select id="tabela-filter-pop" onchange="loadTabelaGeral(1)" style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); font-size: 0.85rem;">
+                            <option value="Todos">POP: Todos</option>
+                            <option value="Sim">POP Atendido</option>
+                            <option value="Parcial">POP Parcial</option>
+                            <option value="Não">POP Não Atendido</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-container" style="overflow-x: auto;">
+                    <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                        <thead>
+                            <tr style="background: var(--bg-hover); text-align: left;">
+                                <th style="padding: 10px;">SS / OS</th>
+                                <th style="padding: 10px;">Matrícula</th>
+                                <th style="padding: 10px;">Serviço</th>
+                                <th style="padding: 10px;">Bairro</th>
+                                <th style="padding: 10px;">Logradouro</th>
+                                <th style="padding: 10px;">Tramitação / Data</th>
+                                <th style="padding: 10px;">Situação</th>
+                                <th style="padding: 10px;">Observação</th>
+                                <th style="padding: 10px; text-align: center;">Detalhes</th>
+                                <th style="padding: 10px; text-align: center;">Atendeu ao POP?</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-geral-rows">
+                            <tr><td colspan="10" style="padding: 20px; text-align: center; color: var(--text-muted);">Carregando solicitações...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Detalhes Modal -->
+                <div id="modal-detalhes" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+                    <div style="background: var(--bg-card); width: 600px; max-width: 90%; max-height: 80vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+                        <div style="padding: 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--bg-card-hover);">
+                            <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                <i data-lucide="activity" style="width: 18px; height: 18px; color: var(--accent-blue);"></i>
+                                Detalhes da Execução 
+                                <span style="color: var(--text-muted); font-weight: normal; font-size: 0.9rem;">SS <span id="modal-os-numero"></span></span>
+                            </h3>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span id="modal-documentos-badge" style="font-size: 0.75rem; text-transform: uppercase; font-weight: bold; padding: 4px 8px; border-radius: 6px;">
+                                    📄 Documentos: 0 / 15
+                                </span>
+                                <button onclick="document.getElementById('modal-detalhes').style.display='none'" style="background: none; border: none; cursor: pointer; font-size: 1.2rem; color: var(--text-muted);">&times;</button>
+                            </div>
+                        </div>
+                        <div id="modal-detalhes-content" style="padding: 0; overflow-y: auto; font-size: 0.85rem; line-height: 1.5; color: var(--text-primary); background: var(--bg-card);">
+                            Carregando...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paginação -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+                    <span id="tabela-pagination-info" style="font-size: 0.85rem; color: var(--text-muted);">Página 1 de 1</span>
+                    <div style="display: flex; gap: 6px;">
+                        <button id="tabela-btn-prev" onclick="changeTabelaPage(-1)" style="padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); font-size: 0.85rem; cursor: pointer;">← Anterior</button>
+                        <button id="tabela-btn-next" onclick="changeTabelaPage(1)" style="padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--card-bg); color: var(--text-color); font-size: 0.85rem; cursor: pointer;">Próxima →</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ML Section -->
+        <section class="content-section" id="section-ml">
+            <div class="ml-grid">
+                <div class="chart-card">
+                    <h3 class="chart-title">Status do Modelo</h3>
+                    <div class="ml-status" id="ml-status">
+                        <div class="loading-state">Carregando métricas do modelo...</div>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3 class="chart-title">Ações</h3>
+                    <div class="ml-actions">
+                        <button class="btn-primary" id="btn-predict"><i data-lucide="cpu"
+                                style="width: 16px; height: 16px;"></i> Executar Predições</button>
+                        <button class="btn-secondary" id="btn-retrain"><i data-lucide="settings"
+                                style="width: 16px; height: 16px;"></i> Re-treinar Modelo</button>
+                    </div>
+                    <div class="ml-result" id="ml-result"></div>
+                </div>
+                <div class="chart-card full-width">
+                    <h3 class="chart-title">Histórico de Métricas</h3>
+                    <div class="table-container" id="table-metrics"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Mapa de Calor (Calendar Heatmap + Matriz de Calor) -->
+        <section class="content-section" id="section-heatmaps">
+            <!-- Header do Mapa de Calor -->
+            <div class="table-card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, var(--bg-card) 0%, rgba(249,115,22,0.06) 100%); border-left: 4px solid #EA580C;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--text-color); margin: 0 0 4px 0;">
+                            Mapa de Calor Operacional — Densidade Temporal & Territorial
+                        </h2>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Visualização anual contínua de intensidade diária (Calendar Heatmap) e matriz de concentração por bairro e mês.</p>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <span class="text-sm" style="color: var(--text-muted); font-size: 0.85rem;">Ano do Mapa:</span>
+                        <select id="select-heatmap-ano" onchange="loadHeatmapsData()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-color); font-weight: 600; font-size: 0.85rem;">
+                            <option value="2026" selected>2026</option>
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                        </select>
+                        <button class="btn-secondary" onclick="loadHeatmapsData()" style="padding: 6px 12px; font-size: 0.82rem;">
+                            <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Atualizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mini KPIs do Mapa de Calor -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 1.25rem;">
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Total de Demandas no Ano</div>
+                        <div id="kpi-heat-total" style="font-size: 1.35rem; font-weight: 800; color: var(--text-color);">--</div>
+                    </div>
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Média Diária de Ocorrências</div>
+                        <div id="kpi-heat-media" style="font-size: 1.35rem; font-weight: 800; color: #EA580C;">--</div>
+                    </div>
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Pico Máximo em 24h</div>
+                        <div id="kpi-heat-pico" style="font-size: 1.35rem; font-weight: 800; color: #DC2626;">--</div>
+                    </div>
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">Dias com Registros</div>
+                        <div id="kpi-heat-dias" style="font-size: 1.35rem; font-weight: 800; color: #2563EB;">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 1: Calendar Heatmap Anual (GitHub-Style / 365 Dias) -->
+            <div class="table-card" style="margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <h3 class="chart-title" style="margin-bottom: 2px;">
+                            <i data-lucide="calendar" style="width: 18px; height: 18px; margin-right: 8px; color: #EA580C; vertical-align: middle;"></i>
+                            Calendar Heatmap — Frequência Diária (365 Dias)
+                        </h3>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Densidade diária de solicitações ao longo dos 12 meses do ano.</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-muted);">
+                        <span>Menos</span>
+                        <div style="width: 12px; height: 12px; border-radius: 2px; background: #E2E8F0;"></div>
+                        <div style="width: 12px; height: 12px; border-radius: 2px; background: #FED7AA;"></div>
+                        <div style="width: 12px; height: 12px; border-radius: 2px; background: #FB923C;"></div>
+                        <div style="width: 12px; height: 12px; border-radius: 2px; background: #EA580C;"></div>
+                        <div style="width: 12px; height: 12px; border-radius: 2px; background: #9A3412;"></div>
+                        <span>Mais</span>
+                    </div>
+                </div>
+
+                <div id="calendar-heatmap-container" style="overflow-x: auto; padding: 12px 4px 8px 4px;">
+                    <div class="loading-state">Renderizando Calendar Heatmap...</div>
+                </div>
+            </div>
+
+            <!-- Card 2: Matriz de Calor Territorial (Bairros x Meses) -->
+            <div class="table-card" style="margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <h3 class="chart-title" style="margin-bottom: 2px;">
+                            <i data-lucide="grid" style="width: 18px; height: 18px; margin-right: 8px; color: #2563EB; vertical-align: middle;"></i>
+                            Matriz de Calor Territorial (Top Bairros x Meses)
+                        </h3>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Concentração de ocorrências nos principais bairros mês a mês.</p>
+                    </div>
+                </div>
+
+                <div id="matrix-heatmap-container" style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+                    <div class="loading-state">Renderizando Matriz de Calor...</div>
+                </div>
+            </div>
+        <!-- Section: Logs RUM (Central de Extração e Inteligência) -->
+        <section class="content-section" id="section-logs-rum">
+            <!-- Header do Logs RUM -->
+            <div class="rum-header">
+                <div>
+                    <h2 class="rum-header-title">
+                        <i data-lucide="terminal" style="width: 22px; height: 22px; color: #2563EB;"></i>
+                        Central de Operações e Logs RUM
+                    </h2>
+                    <p class="rum-header-subtitle">Automação headless de extração de ordens de serviço, telemetria SQLite e streaming em tempo real.</p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <div class="rum-status-pill" id="rum-daemon-pill">
+                        <span class="rum-status-dot"></span>
+                        <span id="rum-daemon-text">Daemon SaneaIA Ativo</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Painel de Parâmetros da Execução -->
+            <div class="rum-params-bar">
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-color);">Período de Extração:</span>
+                    <div class="rum-period-buttons">
+                        <button type="button" class="rum-period-btn active" data-period="2" onclick="setRumPeriod(2, this)">Ontem e Hoje (2d)</button>
+                        <button type="button" class="rum-period-btn" data-period="3" onclick="setRumPeriod(3, this)">Últimos 3 dias</button>
+                        <button type="button" class="rum-period-btn" data-period="7" onclick="setRumPeriod(7, this)">Últimos 7 dias</button>
+                        <button type="button" class="rum-period-btn" data-period="custom" onclick="setRumPeriod('custom', this)">Personalizado</button>
+                    </div>
+                    <div class="rum-date-inputs" id="rum-custom-dates" style="display: none;">
+                        <input type="text" id="rum-dt-inicio" placeholder="DD/MM/AAAA" maxlength="10">
+                        <span style="color: var(--text-muted); font-size: 0.8rem;">até</span>
+                        <input type="text" id="rum-dt-fim" placeholder="DD/MM/AAAA" maxlength="10">
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                    <label class="rum-checkbox-label">
+                        <input type="checkbox" id="rum-headless-check" checked style="accent-color: #2563EB; width: 16px; height: 16px;">
+                        <span>Executar em Segundo Plano (Headless / Oculto)</span>
+                    </label>
+                    <button type="button" class="btn-secondary" onclick="triggerRumAction('preditiva')" style="padding: 6px 12px; font-size: 0.8rem;" title="Recalcula predições da IA para as demandas pendentes">
+                        <i data-lucide="brain" style="width: 14px; height: 14px; color: #8B5CF6;"></i> Recalcular IA Preditiva
+                    </button>
+                </div>
+            </div>
+
+            <!-- Operations Grid: 4 Rotinas Principais -->
+            <div class="rum-operations-grid">
+                <!-- Card 1: Ciclo Completo -->
+                <div class="rum-op-card featured">
+                    <div>
+                        <div class="rum-op-top">
+                            <span class="rum-op-badge blue">Pipeline Completo</span>
+                            <i data-lucide="layers" style="width: 18px; height: 18px; color: #2563EB;"></i>
+                        </div>
+                        <h4 class="rum-op-title">Extração Única Completa</h4>
+                        <p class="rum-op-desc">Executa o pipeline de 3 fases: Executadas (Projeto 3) ➔ Detalhes Técnicos (HTML) ➔ Pendências (Projeto 1) ➔ IA Preditiva.</p>
+                    </div>
+                    <button type="button" class="rum-btn-action primary" id="btn-run-completo" onclick="triggerRumAction('ciclo_completo')">
+                        <i data-lucide="play" style="width: 15px; height: 15px;"></i> Iniciar Ciclo Completo
+                    </button>
+                </div>
+
+                <!-- Card 2: Apenas Executadas + Detalhes -->
+                <div class="rum-op-card">
+                    <div>
+                        <div class="rum-op-top">
+                            <span class="rum-op-badge">Fase 1 e 1.5</span>
+                            <i data-lucide="check-circle-2" style="width: 18px; height: 18px; color: #10B981;"></i>
+                        </div>
+                        <h4 class="rum-op-title">Apenas Executadas + Detalhes</h4>
+                        <p class="rum-op-desc">Extrai as solicitações de Falta d'Água Executadas do SCI Web e realiza o parsing detalhado das ordens de serviço.</p>
+                    </div>
+                    <button type="button" class="rum-btn-action" id="btn-run-executadas" onclick="triggerRumAction('executadas')">
+                        <i data-lucide="play" style="width: 15px; height: 15px;"></i> Executar Executadas
+                    </button>
+                </div>
+
+                <!-- Card 3: Apenas Pendências + IA -->
+                <div class="rum-op-card">
+                    <div>
+                        <div class="rum-op-top">
+                            <span class="rum-op-badge">Fase 2 e 3</span>
+                            <i data-lucide="alert-circle" style="width: 18px; height: 18px; color: #F59E0B;"></i>
+                        </div>
+                        <h4 class="rum-op-title">Apenas Pendências + IA Preditiva</h4>
+                        <p class="rum-op-desc">Extrai as 4 categorias de pendências (Vazamento, Pavimento, Falta d'Água, Carro Pipa) e atualiza os insights preditivos da IA.</p>
+                    </div>
+                    <button type="button" class="rum-btn-action" id="btn-run-pendencias" onclick="triggerRumAction('pendencias')">
+                        <i data-lucide="play" style="width: 15px; height: 15px;"></i> Executar Pendências
+                    </button>
+                </div>
+
+                <!-- Card 4: Detalhes Isolados (Webhook-Ready) -->
+                <div class="rum-op-card highlight">
+                    <div>
+                        <div class="rum-op-top">
+                            <span class="rum-op-badge green">Webhook-Ready</span>
+                            <i data-lucide="file-text" style="width: 18px; height: 18px; color: #059669;"></i>
+                        </div>
+                        <h4 class="rum-op-title">Atualizar Detalhes das SS (Isolado)</h4>
+                        <p class="rum-op-desc">Scraping exclusivo de dados técnicos das SSs pendentes de detalhamento sem re-extração de listas. Pronto para dados via Webhook.</p>
+                    </div>
+                    <button type="button" class="rum-btn-action success" id="btn-run-detalhes" onclick="triggerRumAction('detalhes_isolado')">
+                        <i data-lucide="refresh-cw" style="width: 15px; height: 15px;"></i> Atualizar Detalhes Agora
+                    </button>
+                </div>
+            </div>
+
+            <!-- Live Telemetry & Progress Card -->
+            <div class="rum-telemetry-card">
+                <div class="rum-telemetry-header">
+                    <div class="rum-telemetry-status">
+                        <span id="rum-status-indicator" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #94A3B8;"></span>
+                        <span id="rum-live-status-text">Status: Ocioso (Pronto para execução)</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); font-family: ui-monospace, SFMono-Regular, monospace;">
+                        <span id="rum-timer-text">Tempo Decorrido: 00:00</span>
+                    </div>
+                </div>
+
+                <!-- Etapa atual e Porcentagem -->
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 600; color: var(--text-color); margin-bottom: 4px;">
+                    <span id="rum-current-stage">Nenhuma rotina ativa no momento</span>
+                    <span id="rum-progress-pct" style="font-family: ui-monospace, SFMono-Regular, monospace;">0%</span>
+                </div>
+
+                <div class="rum-progress-container">
+                    <div class="rum-progress-bar" id="rum-progress-bar"></div>
+                </div>
+
+                <!-- Live Metrics Grid -->
+                <div class="rum-metrics-grid">
+                    <div class="rum-metric-box">
+                        <div class="rum-metric-label">Encontrados</div>
+                        <div class="rum-metric-val" id="rum-m-found">0</div>
+                    </div>
+                    <div class="rum-metric-box">
+                        <div class="rum-metric-label">Processados</div>
+                        <div class="rum-metric-val" id="rum-m-processed">0</div>
+                    </div>
+                    <div class="rum-metric-box">
+                        <div class="rum-metric-label" style="color: #059669;">Novos Registros</div>
+                        <div class="rum-metric-val" id="rum-m-new" style="color: #059669;">0</div>
+                    </div>
+                    <div class="rum-metric-box">
+                        <div class="rum-metric-label">Atualizados</div>
+                        <div class="rum-metric-val" id="rum-m-updated">0</div>
+                    </div>
+                    <div class="rum-metric-box">
+                        <div class="rum-metric-label" style="color: #DC2626;">Erros / Falhas</div>
+                        <div class="rum-metric-val" id="rum-m-errors" style="color: #DC2626;">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monospace Log Terminal -->
+            <div class="rum-terminal-card">
+                <div class="rum-terminal-topbar">
+                    <div class="rum-terminal-title">
+                        <span class="rum-terminal-dot" id="rum-terminal-dot"></span>
+                        <span>TERMINAL DE LOGS RUM — STREAM SSE AO VIVO</span>
+                    </div>
+                    <div class="rum-terminal-actions">
+                        <button type="button" class="rum-btn-terminal" onclick="copyRumLogs()" title="Copiar logs para a área de transferência">
+                            <i data-lucide="copy" style="width: 13px; height: 13px;"></i> Copiar Logs
+                        </button>
+                        <button type="button" class="rum-btn-terminal" onclick="clearRumLogs()" title="Limpar janela do terminal">
+                            <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i> Limpar
+                        </button>
+                        <button type="button" class="rum-btn-terminal" id="btn-autoscroll-toggle" onclick="toggleRumAutoscroll()" title="Alternar rolagem automática">
+                            <i data-lucide="arrow-down-circle" style="width: 13px; height: 13px;"></i> Auto-Scroll: ON
+                        </button>
+                        <button type="button" class="rum-btn-terminal danger" id="btn-cancel-job" onclick="cancelRumJob()" disabled title="Interrompe imediatamente a execução">
+                            <i data-lucide="square" style="width: 13px; height: 13px;"></i> Cancelar Extração
+                        </button>
+                    </div>
+                </div>
+                <div class="rum-terminal-body" id="rum-terminal-body">
+                    <div class="rum-log-line">
+                        <span class="rum-log-ts">[00:00:00]</span>
+                        <span class="rum-log-level info">[INFO]</span>
+                        <span class="rum-log-msg">Terminal de telemetria RUM conectado e pronto para transmissões em tempo real.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Database Impact Section -->
+            <div class="rum-db-grid">
+                <!-- Banco Gestão UMB (database.sqlite) -->
+                <div class="rum-db-card">
+                    <h3 class="rum-db-title">
+                        <i data-lucide="database" style="width: 16px; height: 16px; color: #2563EB;"></i>
+                        Impacto: Banco Gestão UMB (database.sqlite)
+                    </h3>
+                    <table class="rum-db-table">
+                        <thead>
+                            <tr>
+                                <th>Tabela Operacional</th>
+                                <th style="text-align: right;">Antes</th>
+                                <th style="text-align: right;">Depois</th>
+                                <th style="text-align: right;">Variação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rum-db-gestao-tbody">
+                            <tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 12px;">Carregando dados do banco...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Banco SaneaIA (saneaia.db) -->
+                <div class="rum-db-card">
+                    <h3 class="rum-db-title">
+                        <i data-lucide="database" style="width: 16px; height: 16px; color: #8B5CF6;"></i>
+                        Impacto: Banco SaneaIA (saneaia.db)
+                    </h3>
+                    <table class="rum-db-table">
+                        <thead>
+                            <tr>
+                                <th>Tabela Operacional</th>
+                                <th style="text-align: right;">Antes</th>
+                                <th style="text-align: right;">Depois</th>
+                                <th style="text-align: right;">Variação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rum-db-saneaia-tbody">
+                            <tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 12px;">Carregando dados do banco...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Scheduler & Execution History Row -->
+            <div class="rum-bottom-grid">
+                <!-- Scheduler Card -->
+                <div class="rum-scheduler-card">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                            <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-color); margin: 0; display: flex; align-items: center; gap: 6px;">
+                                <i data-lucide="clock" style="width: 16px; height: 16px; color: #F59E0B;"></i> Agendador Automático
+                            </h4>
+                            <span id="rum-scheduler-status-badge" class="rum-history-status" style="background: rgba(100,116,139,0.15); color: #64748B;">Pausado</span>
+                        </div>
+                        <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0 0 1rem 0;">Executa rotinas periodicamente em background no ecossistema.</p>
+
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <div>
+                                <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-color); margin-bottom: 4px;">Intervalo de Execução:</label>
+                                <select id="rum-sched-interval" style="width: 100%; padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-hover); color: var(--text-color); font-size: 0.8rem;">
+                                    <option value="15">A cada 15 minutos</option>
+                                    <option value="30">A cada 30 minutos</option>
+                                    <option value="60" selected>A cada 60 minutos (Padrão)</option>
+                                    <option value="120">A cada 2 horas</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-color); margin-bottom: 4px;">Rotina Programada:</label>
+                                <select id="rum-sched-routine" style="width: 100%; padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-hover); color: var(--text-color); font-size: 0.8rem;">
+                                    <option value="ciclo_completo" selected>Extração Única Completa</option>
+                                    <option value="executadas">Apenas Executadas + Detalhes</option>
+                                    <option value="detalhes_isolado">Atualizar Detalhes das SS (Isolado)</option>
+                                </select>
+                            </div>
+
+                            <div style="background: var(--bg-hover); border: 1px solid var(--border-color); border-radius: 4px; padding: 8px; font-size: 0.76rem;">
+                                <div style="color: var(--text-muted); margin-bottom: 2px;">Próximo Disparo:</div>
+                                <div id="rum-sched-next" style="font-weight: 700; color: var(--text-color); font-family: ui-monospace, monospace;">Não agendado</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="rum-btn-action" id="btn-toggle-scheduler" onclick="toggleRumScheduler()" style="margin-top: 1rem;">
+                        <i data-lucide="power" style="width: 14px; height: 14px;"></i> <span id="btn-toggle-scheduler-text">Ativar Agendador</span>
+                    </button>
+                </div>
+
+                <!-- History Table Card -->
+                <div class="rum-history-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-color); margin: 0; display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="history" style="width: 16px; height: 16px; color: #2563EB;"></i> Histórico de Execuções RUM
+                        </h4>
+                        <button type="button" class="btn-secondary" onclick="loadRumHistory()" style="padding: 4px 10px; font-size: 0.78rem;">
+                            <i data-lucide="refresh-cw" style="width: 13px; height: 13px;"></i> Atualizar
+                        </button>
+                    </div>
+
+                    <div style="overflow-x: auto; max-height: 280px;">
+                        <table class="rum-history-table">
+                            <thead>
+                                <tr>
+                                    <th>Início</th>
+                                    <th>Rotina</th>
+                                    <th>Período</th>
+                                    <th>Duração</th>
+                                    <th>Status</th>
+                                    <th>Novos</th>
+                                    <th style="text-align: right;">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rum-history-tbody">
+                                <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 14px;">Carregando histórico...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Logs Históricos -->
+            <div class="rum-modal-backdrop" id="rum-history-modal" onclick="closeRumModal(event)">
+                <div class="rum-modal-content" onclick="event.stopPropagation()">
+                    <div class="rum-modal-header">
+                        <span class="rum-modal-title" id="rum-modal-title">Logs da Execução #--</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button type="button" class="rum-btn-terminal" onclick="copyRumModalLogs()">
+                                <i data-lucide="copy" style="width: 13px; height: 13px;"></i> Copiar
+                            </button>
+                            <button type="button" class="rum-btn-terminal" onclick="closeRumModal()">
+                                <i data-lucide="x" style="width: 14px; height: 14px;"></i> Fechar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="rum-modal-body" id="rum-modal-body">Carregando logs...</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/vendor/marked.min.js"></script>
+    <script src="/static/vendor/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+    <script src="/static/js/dashboard.js?v=57"></script>
+</body>
+
+</html>

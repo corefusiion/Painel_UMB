@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Console de Ingestão de Dados — Webhook Gateway</title>
+    <style>
+        :root {
+            --bg-canvas: #09090b;
+            --bg-surface: #121215;
+            --bg-card: #18181b;
+            --bg-card-header: #202024;
+            --border-color: #27272a;
+            --border-active: #52525b;
+            --text-primary: #f4f4f5;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --success-color: #16a34a;
+            --error-color: #dc2626;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            border-radius: 0 !important; /* Estrito: sem cantos arredondados */
+        }
+
+        body {
+            background-color: var(--bg-canvas);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 13px;
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Header */
+        header {
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-title {
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--text-primary);
+            text-transform: uppercase;
+        }
+
+        .header-tag {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+        }
+
+        .header-meta {
+            display: flex;
+            gap: 16px;
+            font-family: var(--font-mono);
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+        }
+
+        .header-meta span strong {
+            color: var(--text-primary);
+        }
+
+        /* Main Workspace */
+        main {
+            flex: 1;
+            padding: 24px;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 960px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 620px;
+        }
+
+        .panel-header {
+            background: var(--bg-card-header);
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-family: var(--font-mono);
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        .panel-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .action-btn:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border-color: var(--border-active);
+        }
+
+        .action-btn-danger {
+            color: #f87171;
+            border-color: #7f1d1d;
+        }
+
+        .action-btn-danger:hover {
+            background: rgba(220, 38, 38, 0.15);
+            border-color: #ef4444;
+            color: #ffffff;
+        }
+
+        /* Preset Toolbar */
+        .preset-bar {
+            background: var(--bg-canvas);
+            border-bottom: 1px solid var(--border-color);
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+        }
+
+        .preset-label {
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+
+        .preset-select {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            outline: none;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .preset-select:focus {
+            border-color: var(--border-active);
+        }
+
+        /* Security Notice */
+        .tag-notice {
+            background: #0d1117;
+            border-bottom: 1px solid var(--border-color);
+            padding: 6px 14px;
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: #38bdf8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Editor Area */
+        .editor-wrapper {
+            flex: 1;
+            position: relative;
+            background: #000000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        textarea#payload {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            padding: 14px;
+            color: #38bdf8;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            tab-size: 2;
+        }
+
+        /* Panel Footer */
+        .panel-footer {
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border-color);
+            padding: 12px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            padding: 10px 18px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #ffffff;
+            color: #000000;
+            border-color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background: #e4e4e7;
+        }
+
+        .btn-primary:disabled {
+            background: #27272a;
+            color: #71717a;
+            border-color: #27272a;
+            cursor: not-allowed;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--border-active);
+            color: var(--text-primary);
+        }
+
+        /* Response Panel */
+        .response-meta {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-canvas);
+        }
+
+        .meta-col {
+            padding: 8px 12px;
+            border-right: 1px solid var(--border-color);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+        }
+
+        .meta-col:last-child {
+            border-right: none;
+        }
+
+        .meta-col-label {
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 0.65rem;
+            margin-bottom: 2px;
+        }
+
+        .meta-col-val {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .meta-col-val.status-200 {
+            color: var(--success-color);
+        }
+
+        .meta-col-val.status-err {
+            color: var(--error-color);
+        }
+
+        .response-viewer {
+            flex: 1;
+            background: #000000;
+            padding: 14px;
+            overflow: auto;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            line-height: 1.5;
+            color: #a1a1aa;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* Status Bar */
+        footer {
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border-color);
+            padding: 8px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--success-color);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="header-brand">
+            <span class="header-title">UMBMAS / SCI-WEB INGESTION CONSOLE</span>
+            <span class="header-tag">API GATEWAY</span>
+        </div>
+        <div class="header-meta">
+            <span>ENDPOINT: <strong id="endpoint-display">...</strong></span>
+            <span>PORTA: <strong>8080 (REVERSE PROXY)</strong></span>
+            <span>ORIGEM: <strong>EMBASA CORPORATE NETWORK</strong></span>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main>
+        <!-- Panel 1: Request Payload -->
+        <section class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Corpo da Requisição (HTTP POST)</span>
+                <div class="panel-actions">
+                    <button class="action-btn" onclick="formatJson()">Formatar</button>
+                    <button class="action-btn" onclick="copyPayload()">Copiar</button>
+                </div>
+            </div>
+
+            <div class="preset-bar">
+                <span class="preset-label">Modelo:</span>
+                <select class="preset-select" id="preset-selector" onchange="applyPreset()">
+                    <option value="efraim">Efraim SCI — Serviço 291 (Vazamento Ramal)</option>
+                    <option value="falta_agua">Falta d'Água Executada — Serviço 364</option>
+                    <option value="pendente">Falta d'Água Pendente — Aberta / Programada</option>
+                    <option value="lote">Lote Múltiplo — 2 Solicitações Simultâneas</option>
+                </select>
+            </div>
+
+            <div class="tag-notice">
+                <span>IDENTIFICADOR NATIVO: [TESTE_EMULADOR]</span>
+                <span style="color: var(--text-muted);">Empacotado automaticamente em todos os envios</span>
+            </div>
+
+            <div class="editor-wrapper">
+                <textarea id="payload" spellcheck="false"></textarea>
+            </div>
+
+            <div class="panel-footer">
+                <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">
+                    Content-Type: application/json; charset=utf-8
+                </span>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-ghost" onclick="testarGetStatus()">Verificar /status</button>
+                    <button class="btn btn-primary" id="btn-submit" onclick="enviarPayload()">Executar POST</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Panel 2: HTTP Response -->
+        <section class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Resposta do Servidor</span>
+                <div class="panel-actions">
+                    <button class="action-btn action-btn-danger" onclick="expurgarTestes()">Expurgar Dados de Teste</button>
+                    <button class="action-btn" onclick="copyResponse()">Copiar</button>
+                    <button class="action-btn" onclick="clearResponse()">Limpar</button>
+                </div>
+            </div>
+
+            <div class="response-meta">
+                <div class="meta-col">
+                    <div class="meta-col-label">Status HTTP</div>
+                    <div class="meta-col-val" id="resp-status">AGUARDANDO REQUISIÇÃO</div>
+                </div>
+                <div class="meta-col">
+                    <div class="meta-col-label">Tempo de Resposta</div>
+                    <div class="meta-col-val" id="resp-latency">--</div>
+                </div>
+                <div class="meta-col">
+                    <div class="meta-col-label">Tamanho do Payload</div>
+                    <div class="meta-col-val" id="resp-size">--</div>
+                </div>
+            </div>
+
+            <div class="response-viewer" id="response-viewer">
+                <pre id="response-text">// Clique em "Executar POST" para testar o envio do payload ao Webhook.</pre>
+            </div>
+
+            <div class="panel-footer">
+                <span id="response-timestamp" style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">
+                    Última sincronização: nenhuma
+                </span>
+            </div>
+        </section>
+    </main>
+
+    <!-- Status Bar -->
+    <footer>
+        <div class="status-pill">
+            <div class="status-dot"></div>
+            <span>GATEWAY LOCAL OPERACIONAL</span>
+        </div>
+        <div>
+            <span>TARGET: /webhook -> 127.0.0.1:3002 | PURGE: /purge-test</span>
+        </div>
+    </footer>
+
+    <script>
+        const TAG_TESTE = "[TESTE_EMULADOR]";
+        const ORIGEM_TESTE = "TESTE_EMULADOR_WEBHOOK";
+
+        const PRESETS = {
+            efraim: [
+                {
+                    "ss": 959979459,
+                    "servico": "291-VAZ RAMAL NA RUA COM PAVI",
+                    "matricula": null,
+                    "localidade": "900-SALVADOR UMB ",
+                    "bairro": null,
+                    "logradouro": null,
+                    "num_imovel": " ",
+                    "data_abertura": "2026-09-04T11:42:55.020+00:00",
+                    "data_conclusao": "2026-09-04T11:45:37.391+00:00",
+                    "situacao": "CONCLUIDA EXECUTADA",
+                    "unidade_atual": "CONSORCIO NOVA BOLANDEIRA ",
+                    "observacao": "[TESTE_EMULADOR] VAZAMENTO REPARADO EM CARATER DE TESTE DE INTEGRACAO",
+                    "origem": ORIGEM_TESTE
+                }
+            ],
+            falta_agua: [
+                {
+                    "ss": 960012345,
+                    "servico": "364 - VERIF FALTA AGUA IMOVEL",
+                    "matricula": "88776655",
+                    "localidade": "LAURO DE FREITAS",
+                    "bairro": "10 - CENTRO",
+                    "logradouro": "RUA DO TESTE OPERACIONAL",
+                    "num_imovel": "120",
+                    "data_abertura": "2026-09-09T08:00:00.000+00:00",
+                    "data_conclusao": "2026-09-09T08:40:00.000+00:00",
+                    "especificacao": "FALTA DE AGUA GERAL",
+                    "observacao": "[TESTE_EMULADOR] MANOBRA EXECUTADA. PRESSAO REGULARIZADA COM 14 MCA NO CAVALETE.",
+                    "situacao": "Concluída Executada",
+                    "unidade_atual": "UMBMAS",
+                    "data_tramitacao": "2026-09-09T08:45:00.000+00:00",
+                    "origem": ORIGEM_TESTE
+                }
+            ],
+            pendente: [
+                {
+                    "ss": 960098765,
+                    "servico": "364 - VERIF FALTA AGUA IMOVEL",
+                    "matricula": "33445566",
+                    "localidade": "SALVADOR",
+                    "bairro": "15 - PITUBA",
+                    "logradouro": "AVENIDA MANOEL DIAS DA SILVA",
+                    "num_imovel": "450",
+                    "data_abertura": "2026-09-09T08:15:00.000+00:00",
+                    "data_conclusao": "",
+                    "especificacao": "BAIXA PRESSAO NO PREDIO",
+                    "observacao": "[TESTE_EMULADOR] SOLICITADA PRIORIDADE PARA O HORARIO COMERCIAL",
+                    "situacao": "Aberta",
+                    "unidade_atual": "UMBMAS",
+                    "data_tramitacao": "2026-09-09T08:20:00.000+00:00",
+                    "origem": ORIGEM_TESTE
+                }
+            ],
+            lote: [
+                {
+                    "ss": 960000001,
+                    "servico": "291-VAZ RAMAL NA RUA COM PAVI",
+                    "matricula": null,
+                    "localidade": "900-SALVADOR UMB ",
+                    "situacao": "CONCLUIDA EXECUTADA",
+                    "unidade_atual": "CONSORCIO NOVA BOLANDEIRA ",
+                    "observacao": "[TESTE_EMULADOR] ITEM 1 DO LOTE DE TESTE",
+                    "origem": ORIGEM_TESTE
+                },
+                {
+                    "ss": 960000002,
+                    "servico": "364 - VERIF FALTA AGUA IMOVEL",
+                    "matricula": "11223344",
+                    "localidade": "LAURO DE FREITAS",
+                    "bairro": "11 - BURAQUINHO",
+                    "logradouro": "RUA PRAIA DE COPACABANA",
+                    "situacao": "Concluída Executada",
+                    "unidade_atual": "UMBMAS",
+                    "observacao": "[TESTE_EMULADOR] ITEM 2 DO LOTE DE TESTE",
+                    "origem": ORIGEM_TESTE
+                }
+            ]
+        };
+
+        const targetEndpoint = window.location.origin + '/webhook';
+        document.getElementById('endpoint-display').textContent = targetEndpoint;
+
+        function applyPreset() {
+            const key = document.getElementById('preset-selector').value;
+            const data = PRESETS[key] || PRESETS.efraim;
+            document.getElementById('payload').value = JSON.stringify(data, null, 2);
+        }
+
+        function formatJson() {
+            const el = document.getElementById('payload');
+            try {
+                const parsed = JSON.parse(el.value);
+                el.value = JSON.stringify(parsed, null, 2);
+            } catch (e) {
+                alert('Erro de formatação: JSON inválido (' + e.message + ')');
+            }
+        }
+
+        function copyPayload() {
+            const el = document.getElementById('payload');
+            navigator.clipboard.writeText(el.value).then(() => {
+                alert('Payload copiado para a área de transferência.');
+            });
+        }
+
+        function copyResponse() {
+            const el = document.getElementById('response-text');
+            navigator.clipboard.writeText(el.textContent).then(() => {
+                alert('Resposta copiada para a área de transferência.');
+            });
+        }
+
+        function clearResponse() {
+            document.getElementById('resp-status').textContent = 'AGUARDANDO';
+            document.getElementById('resp-status').className = 'meta-col-val';
+            document.getElementById('resp-latency').textContent = '--';
+            document.getElementById('resp-size').textContent = '--';
+            document.getElementById('response-text').textContent = '// Console limpo.';
+            document.getElementById('response-timestamp').textContent = 'Última sincronização: nenhuma';
+        }
+
+        async function enviarPayload() {
+            const btn = document.getElementById('btn-submit');
+            const statusEl = document.getElementById('resp-status');
+            const latencyEl = document.getElementById('resp-latency');
+            const sizeEl = document.getElementById('resp-size');
+            const responseText = document.getElementById('response-text');
+            const timestampEl = document.getElementById('response-timestamp');
+
+            let bodyData;
+            try {
+                bodyData = JSON.parse(document.getElementById('payload').value);
+            } catch (e) {
+                alert('JSON inválido: ' + e.message);
+                return;
+            }
+
+            // Normalização: garante array e estampa o identificador nativo de teste de forma obrigatória
+            if (!Array.isArray(bodyData)) {
+                bodyData = [bodyData];
+            }
+
+            bodyData.forEach(item => {
+                item.origem = ORIGEM_TESTE;
+                const obsAtual = String(item.observacao || "").trim();
+                if (!obsAtual.includes(TAG_TESTE)) {
+                    item.observacao = obsAtual ? `${TAG_TESTE} ${obsAtual}` : `${TAG_TESTE} REGISTRO DE HOMOLOGACAO`;
+                }
+                const espAtual = String(item.especificacao || "").trim();
+                if (!espAtual.includes(TAG_TESTE)) {
+                    item.especificacao = espAtual ? `${TAG_TESTE} ${espAtual}` : `${TAG_TESTE} REGISTRO DE HOMOLOGACAO`;
+                }
+            });
+
+            // Atualiza visualmente o editor com a estampa de segurança
+            document.getElementById('payload').value = JSON.stringify(bodyData, null, 2);
+
+            btn.disabled = true;
+            btn.textContent = 'EXECUTANDO...';
+            statusEl.textContent = 'PROCESSANDO';
+            statusEl.className = 'meta-col-val';
+            responseText.textContent = '// Enviando dados ao Webhook Gateway...';
+
+            const start = performance.now();
+
+            try {
+                const res = await fetch(targetEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json; charset=utf-8',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(bodyData)
+                });
+
+                const latency = Math.round(performance.now() - start);
+                const rawText = await res.text();
+
+                latencyEl.textContent = latency + ' ms';
+                sizeEl.textContent = new Blob([rawText]).size + ' bytes';
+                statusEl.textContent = res.status + ' ' + res.statusText;
+                statusEl.className = 'meta-col-val ' + (res.ok ? 'status-200' : 'status-err');
+
+                try {
+                    const parsed = JSON.parse(rawText);
+                    responseText.textContent = JSON.stringify(parsed, null, 2);
+                } catch {
+                    responseText.textContent = rawText;
+                }
+
+                timestampEl.textContent = 'Última sincronização: ' + new Date().toLocaleTimeString('pt-BR');
+            } catch (err) {
+                const latency = Math.round(performance.now() - start);
+                latencyEl.textContent = latency + ' ms';
+                statusEl.textContent = 'ERRO DE CONEXÃO';
+                statusEl.className = 'meta-col-val status-err';
+                responseText.textContent = '// Falha na requisição:\n' + err.toString();
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'EXECUTAR POST';
+            }
+        }
+
+        async function testarGetStatus() {
+            const statusEl = document.getElementById('resp-status');
+            const latencyEl = document.getElementById('resp-latency');
+            const sizeEl = document.getElementById('resp-size');
+            const responseText = document.getElementById('response-text');
+            const timestampEl = document.getElementById('response-timestamp');
+
+            statusEl.textContent = 'CONSULTANDO';
+            statusEl.className = 'meta-col-val';
+            responseText.textContent = '// Consultando GET /status...';
+
+            const start = performance.now();
+
+            try {
+                const res = await fetch(targetEndpoint, { method: 'GET' });
+                const latency = Math.round(performance.now() - start);
+                const rawText = await res.text();
+
+                latencyEl.textContent = latency + ' ms';
+                sizeEl.textContent = new Blob([rawText]).size + ' bytes';
+                statusEl.textContent = res.status + ' ' + res.statusText;
+                statusEl.className = 'meta-col-val ' + (res.ok ? 'status-200' : 'status-err');
+
+                try {
+                    const parsed = JSON.parse(rawText);
+                    responseText.textContent = JSON.stringify(parsed, null, 2);
+                } catch {
+                    responseText.textContent = rawText;
+                }
+
+                timestampEl.textContent = 'Última sincronização: ' + new Date().toLocaleTimeString('pt-BR');
+            } catch (err) {
+                const latency = Math.round(performance.now() - start);
+                latencyEl.textContent = latency + ' ms';
+                statusEl.textContent = 'ERRO DE CONEXÃO';
+                statusEl.className = 'meta-col-val status-err';
+                responseText.textContent = '// Falha no GET:\n' + err.toString();
+            }
+        }
+
+        async function expurgarTestes() {
+            if (!confirm("CONFIRMAÇÃO:\nDeseja remover do banco de dados todos os registros marcados com a tag [TESTE_EMULADOR]?")) {
+                return;
+            }
+
+            const statusEl = document.getElementById('resp-status');
+            const latencyEl = document.getElementById('resp-latency');
+            const sizeEl = document.getElementById('resp-size');
+            const responseText = document.getElementById('response-text');
+            const timestampEl = document.getElementById('response-timestamp');
+
+            statusEl.textContent = 'PURGING';
+            statusEl.className = 'meta-col-val';
+            responseText.textContent = '// Disparando rotina de expurgo de dados de homologação...';
+
+            const start = performance.now();
+
+            try {
+                const purgeUrl = window.location.origin + '/purge-test';
+                const res = await fetch(purgeUrl, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json; charset=utf-8',
+                        'X-Purge-Auth': 'UMBMAS_PURGE_SEC_AUTH_9841'
+                    },
+                    body: JSON.stringify({ 
+                        "token": "UMBMAS_PURGE_SEC_AUTH_9841",
+                        "auth_token": "UMBMAS_PURGE_SEC_AUTH_9841"
+                    })
+                });
+
+                const latency = Math.round(performance.now() - start);
+                const data = await res.json();
+
+                latencyEl.textContent = latency + ' ms';
+                sizeEl.textContent = '--';
+                statusEl.textContent = '200 EXPURGADO';
+                statusEl.className = 'meta-col-val status-200';
+
+                responseText.textContent = 
+                    `// ROTINA DE EXPURGO EXECUTADA COM SUCESSO:\n` +
+                    `// ----------------------------------------\n` +
+                    `// Registros excluídos em saneaia.db (Projeto 3) : ${data.excluidos_saneaia}\n` +
+                    `// Registros excluídos em database.sqlite (Projeto 1) : ${data.excluidos_gestao}\n\n` +
+                    JSON.stringify(data, null, 2);
+
+                timestampEl.textContent = 'Último expurgo: ' + new Date().toLocaleTimeString('pt-BR');
+            } catch (err) {
+                statusEl.textContent = 'ERRO DE PURGE';
+                statusEl.className = 'meta-col-val status-err';
+                responseText.textContent = '// Falha ao executar rotina de expurgo:\n' + err.toString();
+            }
+        }
+
+        // Carregar preset inicial
+        applyPreset();
+    </script>
+</body>
+</html>

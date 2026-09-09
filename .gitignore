@@ -1,0 +1,99 @@
+# ==============================================================================
+# ECOSSISTEMA UMBMAS - REGRAS DE IGNORE DO CONTROLE DE VERSÃO (GIT)
+# ==============================================================================
+
+# Diretrizes de IA e Assistentes Locais (Mantidos estritamente no computador local)
+GEMINI.md
+CLAUDE.md
+AGENTS.md
+.agents/
+**/.agents/**
+.gemini/
+**/.gemini/**
+.claude/
+**/.claude/**
+
+# Pastas de Dados Proprietários Locais e Backups
+Base dados UMB/
+**/Base dados UMB/**
+*Base*dados*UMB*
+dados_brutos/
+**/dados_brutos/**
+3 - Saneaia/dados_entrada/
+**/dados_entrada/**
+*.tar.gz
+*.sql.gz
+backups/
+**/backups/**
+temp/
+tmp/
+scratch/
+**/scratch/**
+.git_backup/
+**/.git_backup/**
+*.git_backup
+
+# Dependências e Builds do Node.js
+node_modules/
+dist/
+build/
+.next/
+out/
+.docusaurus/
+.svelte-kit/
+
+# Ambientes Virtuais Python
+venv/
+.venv/
+env/
+ENV/
+pyvenv.cfg
+.python-version
+
+# Arquivos de Cache e Compilação Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Bancos de Dados Locais - Arquivos Temporários, Cache e Locks
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Configurações Locais e Segredos
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs e Relatórios Locais
+*.log
+reports/inventory.json
+geckodriver.log
+
+# IDEs e Editores
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+.project
+.classpath
+.settings/
+
+# Arquivos do Sistema Operacional
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
