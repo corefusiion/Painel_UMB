@@ -17,6 +17,8 @@ Versão: 2.4.0  |  Licença: MIT (Uso Institucional)  |  Classificação: Confid
 > **AVISO DE CONFIDENCIALIDADE E REPOSITÓRIO PRIVADO**  
 > Este repositório contém código-fonte, modelos analíticos e rotinas operacionais de uso interno exclusivo da EMBASA. A reprodução, distribuição externa ou utilização não autorizada é estritamente proibida.
 
+> 🚀 **IMPLANTAÇÃO NO OPENSHIFT (TI EMBASA):** Para implantar este ecossistema conteinerizado no cluster OpenShift da Embasa, consulte o guia direto e humanizado: **[`PASSO_A_PASSO_OPENSHIFT.md`](PASSO_A_PASSO_OPENSHIFT.md)**.
+
 ---
 
 <div align="center">
