@@ -1189,7 +1189,6 @@ body.sidebar-collapsed .sidebar-footer {
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
     padding: 1.5rem;
-    border-left: 4px solid var(--accent-blue);
     transition: all var(--transition-normal);
     white-space: pre-wrap;
     line-height: 1.7;
@@ -1619,10 +1618,10 @@ body.sidebar-collapsed .sidebar-footer {
 .saneaia-list li:last-child { border-bottom: none; }
 
 .saneaia-action-item {
-    background: #F8FAFC;
-    border-left: 4px solid #3B82F6;
+    background: var(--bg-hover, #F8FAFC);
+    border: 1px solid var(--border-subtle);
     padding: 12px 16px;
-    border-radius: 4px 8px 8px 4px;
+    border-radius: 8px;
     margin-bottom: 12px;
 }
 .saneaia-action-item strong { color: #1E293B; display: block; margin-bottom: 4px; font-size: 0.95rem; }
@@ -1673,7 +1672,6 @@ body.sidebar-collapsed .sidebar-footer {
 .saneaia-alert-card {
     background: var(--bg-secondary);
     border: 1px solid var(--border-subtle);
-    border-left: 4px solid #DC2626;
     border-radius: 10px;
     padding: 1rem 1.4rem;
     display: flex;
@@ -2030,7 +2028,6 @@ body.sidebar-collapsed .sidebar-footer {
 .rum-header {
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
-    border-left: 4px solid var(--accent-blue);
     border-radius: var(--radius-md);
     padding: 1.25rem 1.5rem;
     display: flex;

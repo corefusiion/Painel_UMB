@@ -837,12 +837,12 @@ async function loadAnalytics(ano) {
 
         const containerFalhas = document.getElementById('container-pop-falhas');
         if (containerFalhas && opData.pop_falhas) {
-            let htmlF = '<div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 2px;">Principais Não-Conformidades:</div>';
+            let htmlF = '<div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Principais Não-Conformidades:</div>';
             opData.pop_falhas.forEach(f => {
                 htmlF += `
-                    <div style="padding: 7px 10px; border-radius: 6px; background: var(--bg-hover); border-left: 3px solid #EF4444; font-size: 0.77rem;">
-                        <div style="font-weight: 600; color: var(--text-color); line-height: 1.3;">${f.motivo}</div>
-                        <div style="color: #DC2626; font-size: 0.7rem; font-weight: 700; margin-top: 2px;">Ocorrência em ${f.total} OSs</div>
+                    <div style="padding: 8px 12px; border-radius: 6px; background: var(--bg-hover); border: 1px solid var(--border-color); font-size: 0.77rem; display: flex; flex-direction: column; gap: 2px;">
+                        <div style="font-weight: 600; color: var(--text-color); line-height: 1.35;">${f.motivo}</div>
+                        <div style="color: var(--text-muted); font-size: 0.72rem; font-weight: 500;">Ocorrência em <strong style="color: var(--text-color);">${f.total}</strong> OSs</div>
                     </div>
                 `;
             });
@@ -1027,7 +1027,7 @@ async function loadAnalytics(ano) {
                                     ${nivelBadge}
                                 </div>
                                 <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500; margin-top: 1px;">Bairro: ${b_name}</div>
-                                <div style="font-size: 0.72rem; color: #B45309; background: rgba(245,158,11,0.06); padding: 4px 8px; border-radius: 4px; margin-top: 4px; line-height: 1.35; border-left: 2px solid #F59E0B;">
+                                <div style="font-size: 0.72rem; color: var(--text-muted); background: var(--bg-hover); padding: 5px 8px; border-radius: 4px; margin-top: 4px; line-height: 1.35; border: 1px solid var(--border-color);">
                                     ${resumo}
                                 </div>
                             </td>

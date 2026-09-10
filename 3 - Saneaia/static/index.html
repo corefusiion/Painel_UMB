@@ -84,7 +84,7 @@
         /* --- LOGS RUM CRITICAL STYLES --- */
         #section-logs-rum { display: none; width: 100%; animation: fadeIn .3s ease; }
         #section-logs-rum.active { display: block; }
-        .rum-header { background: var(--bg-card); border: 1px solid var(--border-subtle); border-left: 4px solid var(--accent-blue); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem; box-shadow: var(--shadow-sm); }
+        .rum-header { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem; box-shadow: var(--shadow-sm); }
         .rum-header-title { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px; }
         .rum-header-subtitle { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
         .rum-status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; background: rgba(16, 185, 129, 0.1); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.25); }
@@ -468,7 +468,7 @@
                 </div>
 
                 <!-- Parecer Preditivo da IA SaneaIA -->
-                <div class="weather-ai-banner" id="weather-ai-banner" style="background: var(--bg-card); border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 8px; margin-bottom: 1.25rem; border: 1px solid var(--border-color); border-left-width: 4px;">
+                <div class="weather-ai-banner" id="weather-ai-banner" style="background: var(--bg-card); padding: 12px 16px; border-radius: 8px; margin-bottom: 1.25rem; border: 1px solid var(--border-color);">
                     <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #D97706; font-size: 0.88rem; margin-bottom: 4px;">
                         <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i> Diagnóstico Meteorológico Preditivo (SaneaIA ML)
                     </div>
@@ -778,12 +778,12 @@
         <!-- Analytics Section -->
         <section class="content-section" id="section-analytics">
             <!-- Header do Analytics -->
-            <div class="table-card" style="margin-bottom: 1.25rem; background: linear-gradient(135deg, var(--bg-card) 0%, rgba(37,99,235,0.05) 100%); border-left: 4px solid #2563EB;">
+            <div class="table-card" style="margin-bottom: 1.25rem; border: 1px solid var(--border-color); background: var(--bg-card);">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                     <div>
                         <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--text-color); margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
                             Analytics Operacional & Inteligência de Campo
-                            <span id="badge-analytics-ano" class="badge-tag" style="background: #DBEAFE; color: #1E40AF; font-weight: 700; font-size: 0.76rem; padding: 3px 10px; border-radius: 9999px;">(Ano: 2026)</span>
+                            <span id="badge-analytics-ano" class="badge-tag" style="background: var(--bg-hover); color: var(--text-color); font-weight: 700; font-size: 0.76rem; padding: 3px 10px; border-radius: 9999px; border: 1px solid var(--border-color);">(Ano: 2026)</span>
                         </h2>
                         <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">
                             Auditoria técnica de conformidade POP 01, diagnóstico de causas de desabastecimento, tempos de resposta (SLA) e eficiência das equipes.
@@ -800,40 +800,40 @@
             <!-- 4 KPIs Analíticos Estratégicos -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
                 <!-- KPI 1: Conformidade POP -->
-                <div class="table-card" style="padding: 1rem 1.25rem; border-top: 3px solid #10B981;">
+                <div class="table-card" style="padding: 1rem 1.25rem; border: 1px solid var(--border-color); background: var(--bg-card);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Conformidade Geral POP 01</span>
-                        <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; background: rgba(16,185,129,0.1); color: #10B981; font-weight: 700;">Qualidade</span>
+                        <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; background: var(--bg-hover); color: var(--text-color); font-weight: 600; border: 1px solid var(--border-color);">Qualidade</span>
                     </div>
                     <div id="analytics-kpi-pop" style="font-size: 1.65rem; font-weight: 800; color: var(--text-color); margin: 4px 0;">--</div>
                     <div id="analytics-kpi-pop-sub" style="font-size: 0.78rem; color: var(--text-muted);">Carregando auditoria...</div>
                 </div>
 
                 <!-- KPI 2: SLA Atendimento vs Execução -->
-                <div class="table-card" style="padding: 1rem 1.25rem; border-top: 3px solid #3B82F6;">
+                <div class="table-card" style="padding: 1rem 1.25rem; border: 1px solid var(--border-color); background: var(--bg-card);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Tempo Médio Atendimento (SLA)</span>
-                        <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; background: rgba(59,130,246,0.1); color: #3B82F6; font-weight: 700;">Despacho</span>
+                        <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; background: var(--bg-hover); color: var(--text-color); font-weight: 600; border: 1px solid var(--border-color);">Despacho</span>
                     </div>
                     <div id="analytics-kpi-sla" style="font-size: 1.65rem; font-weight: 800; color: var(--text-color); margin: 4px 0;">--</div>
                     <div id="analytics-kpi-sla-sub" style="font-size: 0.78rem; color: var(--text-muted);">Execução no local: --</div>
                 </div>
 
                 <!-- KPI 3: Efetividade pós-execução -->
-                <div class="table-card" style="padding: 1rem 1.25rem; border-top: 3px solid #8B5CF6;">
+                <div class="table-card" style="padding: 1rem 1.25rem; border: 1px solid var(--border-color); background: var(--bg-card);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Efetividade da Visita</span>
-                        <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; background: rgba(139,92,246,0.1); color: #8B5CF6; font-weight: 700;">Normalização</span>
+                        <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; background: var(--bg-hover); color: var(--text-color); font-weight: 600; border: 1px solid var(--border-color);">Normalização</span>
                     </div>
                     <div id="analytics-kpi-efetividade" style="font-size: 1.65rem; font-weight: 800; color: var(--text-color); margin: 4px 0;">--</div>
                     <div id="analytics-kpi-efetividade-sub" style="font-size: 0.78rem; color: var(--text-muted);">Normalizado imediatamente</div>
                 </div>
 
                 <!-- KPI 4: Causa Raiz Predominante -->
-                <div class="table-card" style="padding: 1rem 1.25rem; border-top: 3px solid #F59E0B;">
+                <div class="table-card" style="padding: 1rem 1.25rem; border: 1px solid var(--border-color); background: var(--bg-card);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Causa Raiz Predominante</span>
-                        <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; background: rgba(245,158,11,0.1); color: #F59E0B; font-weight: 700;">Campo</span>
+                        <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; background: var(--bg-hover); color: var(--text-color); font-weight: 600; border: 1px solid var(--border-color);">Campo</span>
                     </div>
                     <div id="analytics-kpi-causa" style="font-size: 1.25rem; font-weight: 800; color: var(--text-color); margin: 6px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">--</div>
                     <div id="analytics-kpi-causa-sub" style="font-size: 0.78rem; color: var(--text-muted);">Principal motivo apontado</div>
@@ -1109,7 +1109,7 @@
         <!-- Section: Mapa de Calor (Calendar Heatmap + Matriz de Calor) -->
         <section class="content-section" id="section-heatmaps">
             <!-- Header do Mapa de Calor -->
-            <div class="table-card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, var(--bg-card) 0%, rgba(249,115,22,0.06) 100%); border-left: 4px solid #EA580C;">
+            <div class="table-card" style="margin-bottom: 1.5rem; border: 1px solid var(--border-color); background: var(--bg-card);">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                     <div>
                         <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--text-color); margin: 0 0 4px 0;">
@@ -1123,6 +1123,8 @@
                             <option value="2026" selected>2026</option>
                             <option value="2025">2025</option>
                             <option value="2024">2024</option>
+                            <option value="2023">2023</option>
+                            <option value="Todos">Todos os Anos</option>
                         </select>
                         <button class="btn-secondary" onclick="loadHeatmapsData()" style="padding: 6px 12px; font-size: 0.82rem;">
                             <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Atualizar
@@ -1532,7 +1534,7 @@
     <script>
         lucide.createIcons();
     </script>
-    <script src="/static/js/dashboard.js?v=61"></script>
+    <script src="/static/js/dashboard.js?v=62"></script>
 </body>
 
 </html>

@@ -563,27 +563,33 @@ async def get_analytics_operacional_detalhado(ano: Optional[str] = None):
             "pct_pop": pct_p
         })
         
-    # 6. Principais falhas de preenchimento POP
+    # 6. Principais falhas de preenchimento POP (análise categorizada por requisito regulatório)
     cur.execute("""
-        SELECT pop_motivo, COUNT(*) as c
+        SELECT pop_motivo
         FROM detalhes_os
         WHERE pop_motivo IS NOT NULL AND TRIM(pop_motivo) != '' AND pop_motivo NOT LIKE '%total conformidade%'
-        GROUP BY pop_motivo
-        ORDER BY c DESC
-        LIMIT 5
     """)
-    pop_motivos = []
-    for pm, c in cur.fetchall():
+    from collections import Counter
+    falhas_counter = Counter()
+    for (pm,) in cur.fetchall():
         pm_clean = pm.replace('\ufffd', 'ã')
-        if "vizinhos" in pm_clean.lower() and len(pm_clean) > 70:
-            pm_clean = "Falta leitura do HD de vizinhos (direito / esquerdo)"
-        elif "insuficientes" in pm_clean.lower() and len(pm_clean) > 70:
-            pm_clean = "Documentos fotográficos insuficientes (0/3) + Pressão não aferida"
-        elif "pressão" in pm_clean.lower() or "pressao" in pm_clean.lower():
-            pm_clean = "Pressão (mca) do imóvel não preenchida"
-        elif "genérica" in pm_clean.lower() or "generica" in pm_clean.lower():
-            pm_clean = "Observação do encerramento muito genérica ou incompleta"
-        pop_motivos.append({"motivo": pm_clean, "total": c})
+        parts = [p.strip() for p in pm_clean.split('|') if p.strip()]
+        for p in parts:
+            p_lower = p.lower()
+            if "vizinho" in p_lower:
+                falhas_counter["Falta leitura do HD de vizinhos (direito/esquerdo)"] += 1
+            elif "pressão" in p_lower or "pressao" in p_lower:
+                falhas_counter["Pressão (mca) no hidrômetro não preenchida"] += 1
+            elif "documento" in p_lower or "foto" in p_lower:
+                falhas_counter["Documentos fotográficos insuficientes (< 3 fotos)"] += 1
+            elif "observação" in p_lower or "observacao" in p_lower or "diagnóstico" in p_lower or "diagnostico" in p_lower or "genérica" in p_lower or "generica" in p_lower:
+                falhas_counter["Observação de encerramento sem parecer técnico conclusivo"] += 1
+            elif "roubo" not in p_lower and "furto" not in p_lower and "isenção" not in p_lower and "isento" not in p_lower:
+                clean_txt = p.rstrip('.')
+                if len(clean_txt) > 5:
+                    falhas_counter[clean_txt] += 1
+
+    pop_motivos = [{"motivo": m, "total": c} for m, c in falhas_counter.most_common(5)]
         
     # 7. Pressão Hidráulica no Hidrômetro
     cur.execute("SELECT hd_pressao FROM detalhes_os WHERE hd_pressao IS NOT NULL AND hd_pressao != ''")
