@@ -89,9 +89,9 @@ class LLMClient:
                         choices = data.get("choices", [])
                         if choices:
                             return choices[0].get("message", {}).get("content", "") or ""
-                    elif response.status_code == 402:
-                        logger.warning("[LLM] OpenRouter sem créditos (HTTP 402). Pausando chamadas remotas por 5 min.")
-                        self._disabled_until = time.time() + 300
+                    elif response.status_code in (401, 402, 403):
+                        logger.warning(f"[LLM] OpenRouter retornou status {response.status_code}. Migrando para Google Gemini Direct.")
+                        self.use_openrouter = False
                     else:
                         logger.warning(f"[LLM] OpenRouter retornou status {response.status_code}.")
             except Exception as e:
