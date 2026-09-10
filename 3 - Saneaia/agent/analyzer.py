@@ -282,15 +282,16 @@ class SaneaiaAnalyzer:
 
             mensagem_com_contexto = f"CONTEXTO INJETADO DO BANCO DE DADOS EM TEMPO REAL:\n{contexto}\n\nPERGUNTA DO USUÁRIO:\n{user_query}"
             
-            try:
-                res = await self.llm.chat(
-                    user_message=mensagem_com_contexto,
-                    system_prompt=system_prompt
-                )
-                if res and len(res.strip()) > 0:
-                    return res
-            except Exception as llm_err:
-                logger.warning(f"[CHAT IA] Falha de comunicação LLM no fallback ({llm_err}). Acionando gerador local de respostas de banco...")
+            if getattr(self.llm, "is_available", True):
+                try:
+                    res = await self.llm.chat(
+                        user_message=mensagem_com_contexto,
+                        system_prompt=system_prompt
+                    )
+                    if res and len(res.strip()) > 0:
+                        return res
+                except Exception as llm_err:
+                    logger.warning(f"[CHAT IA] Falha de comunicação LLM no fallback ({llm_err}). Acionando gerador local de respostas de banco...")
             
             return self._generate_local_db_answer(user_query, year_context or str(ano_detectado or 2026))
             
@@ -317,14 +318,7 @@ class SaneaiaAnalyzer:
             cursor = conn.cursor()
             
             # Caso 1: Endereços/Logradouros Críticos
-            # Detecta variações: "endereços críticos atualmente", "ruas com mais chamados", "logradouros críticos", etc.
-            _endereco_keywords = [
-                "ENDEREÇO", "ENDERECO", "ENDEREÇOS", "ENDERECOS",
-                "RUA", "LOGRADOURO", "TRECHO", "AVENIDA", "AV ", "TRAVESSA", "TV ",
-                "CRITICO", "CRITICA", "CRÍTICO", "CRÍTICA", "CRITICOS", "CRÍTICOS",
-                "ATUAL", "ATUALMENTE", "PROBLEMAT"
-            ]
-            if any(w in q_upper for w in _endereco_keywords):
+            if any(w in q_upper for w in ["ENDEREÇO", "ENDERECO", "ENDEREÇOS", "ENDERECOS", "RUA", "RUAS", "LOGRADOURO", "LOGRADOUROS", "TRECHO", "TRECHOS", "AVENIDA", "AV ", "TRAVESSA"]):
                 cursor.execute(
                     """
                     SELECT logradouro, bairro, COUNT(*) as qtd 
@@ -349,9 +343,9 @@ class SaneaiaAnalyzer:
                     res += f"| {i} | {r[0]} | {r[1]} | {r[2]:,} |\n"
                 res += f"\n*Transparência da análise: Filtro de Ano {ano_detectado} · Volume acumulado de chamados (todas as situações) · Base local.*"
                 return res
-            
+
             # Caso 2: Bairro específico ou ranking de bairros críticos
-            elif "BAIRRO" in q_upper or any(w in q_upper for w in ["HISTORICO", "HISTÓRICO", "HISTORICO", "SERVICO", "SERVIÇO", "RECORRENTE", "CHAMADOS EM"]):
+            elif "BAIRRO" in q_upper or any(w in q_upper for w in ["HISTORICO", "HISTÓRICO", "SERVICO", "SERVIÇO", "RECORRENTE", "CRITICO", "CRÍTICO", "CRITICA", "CRÍTICA"]):
                 import unicodedata as _uc
                 
                 def _strip_accents(s):
@@ -420,7 +414,7 @@ class SaneaiaAnalyzer:
                     return res
                 
                 else:
-                    # Sem bairro específico: ranking geral
+                    # Sem bairro específico: ranking geral de bairros
                     cursor.execute(
                         """
                         SELECT bairro, COUNT(*) as qtd 
@@ -487,11 +481,18 @@ class SaneaiaAnalyzer:
                 
                 cursor.execute(
                     """
-                    SELECT do.atende_pop, COUNT(*) as qtd 
+                    SELECT 
+                        CASE 
+                            WHEN do.atende_pop = 'Sim' THEN 'Conforme com o POP'
+                            WHEN do.atende_pop = 'Não' THEN 'Não Conforme com o POP'
+                            ELSE 'Em Avaliação / Sem Registro'
+                        END as status_pop,
+                        COUNT(*) as qtd 
                     FROM solicitacoes_analise sa
                     JOIN detalhes_os do ON sa.os_numero = do.numero_os
                     WHERE sa.ano = ?
-                    GROUP BY do.atende_pop
+                    GROUP BY status_pop
+                    ORDER BY qtd DESC
                     """,
                     (ano_detectado,)
                 )
@@ -505,9 +506,8 @@ class SaneaiaAnalyzer:
                 res += "Abaixo está o balanço de conformidade técnica das OSs executadas no período:\n\n"
                 total_audits = sum(r[1] for r in rows) or 1
                 for r in rows:
-                    status = "Conforme com o POP" if r[0] == 'Sim' else "Não Conforme com o POP"
                     pct = (r[1] / total_audits) * 100
-                    res += f"- **{status}**: {r[1]:,} OSs ({pct:.1f}%)\n"
+                    res += f"- **{r[0]}**: {r[1]:,} OSs ({pct:.1f}%)\n"
                 res += f"\n*Transparência da análise: Filtro de Ano {ano_detectado} · Total de {total_audits:,} OSs auditadas.*"
                 return res
             
@@ -1159,40 +1159,46 @@ Elabore um relatório de inteligência operacional executivo bem formatado em Ma
                 contexto_conversacao += "\n"
             
             # 5. Planejar SQL
-            logger.info(f"[CHAT IA] Planejando SQL com histórico. Query: {user_query}")
-            planner_prompt = SQL_PLANNER_SYSTEM_PROMPT
-            if contexto_conversacao:
-                planner_prompt += f"\n\n**CONTEXTO DE HISTÓRICO DA CONVERSA:**\n{contexto_conversacao}\nConsidere o contexto acima caso o usuário esteja fazendo perguntas de continuação."
-            
-            if year_context and year_context != "Todos":
-                planner_prompt += f"\n\n**CONTEXTO DO DASHBOARD:** O ano selecionado atualmente no dashboard é **{year_context}**. Se a pergunta do usuário pedir dados referentes a 'este ano', 'esse mês', 'agosto', 'julho' ou qualquer período no contexto recente sem especificar um ano diferente, assuma obrigatoriamente o ano **{year_context}** (ex: `WHERE ano = {year_context}`)."
-            
-            sql_response = await self.llm.chat(
-                user_message=user_query,
-                system_prompt=planner_prompt
-            )
-            
-            sql_clean = sql_response.strip()
-            if sql_clean.startswith("```"):
-                sql_lines = sql_clean.split("\n")
-                if sql_lines[0].startswith("```"):
-                    sql_lines = sql_lines[1:]
-                if sql_lines and sql_lines[-1].startswith("```"):
-                    sql_lines = sql_lines[:-1]
-                sql_clean = "\n".join(sql_lines).strip()
-            
-            sql_clean = re.sub(r'^```sql\s*', '', sql_clean, flags=re.IGNORECASE)
-            sql_clean = re.sub(r'\s*```$', '', sql_clean)
-            sql_clean = sql_clean.strip()
+            sql_clean = "NONE"
+            if getattr(self.llm, "is_available", True):
+                logger.info(f"[CHAT IA] Planejando SQL com histórico. Query: {user_query}")
+                planner_prompt = SQL_PLANNER_SYSTEM_PROMPT
+                if contexto_conversacao:
+                    planner_prompt += f"\n\n**CONTEXTO DE HISTÓRICO DA CONVERSA:**\n{contexto_conversacao}\nConsidere o contexto acima caso o usuário esteja fazendo perguntas de continuação."
+                
+                if year_context and year_context != "Todos":
+                    planner_prompt += f"\n\n**CONTEXTO DO DASHBOARD:** O ano selecionado atualmente no dashboard é **{year_context}**. Se a pergunta do usuário pedir dados referentes a 'este ano', 'esse mês', 'agosto', 'julho' ou qualquer período no contexto recente sem especificar um ano diferente, assuma obrigatoriamente o ano **{year_context}** (ex: `WHERE ano = {year_context}`)."
+                
+                sql_response = await self.llm.chat(
+                    user_message=user_query,
+                    system_prompt=planner_prompt
+                )
+                
+                sql_clean = sql_response.strip()
+                if sql_clean.startswith("```"):
+                    sql_lines = sql_clean.split("\n")
+                    if sql_lines[0].startswith("```"):
+                        sql_lines = sql_lines[1:]
+                    if sql_lines and sql_lines[-1].startswith("```"):
+                        sql_lines = sql_lines[:-1]
+                    sql_clean = "\n".join(sql_lines).strip()
+                
+                sql_clean = re.sub(r'^```sql\s*', '', sql_clean, flags=re.IGNORECASE)
+                sql_clean = re.sub(r'\s*```$', '', sql_clean)
+                sql_clean = sql_clean.strip()
+            else:
+                logger.info(f"[CHAT IA] Provedores externos de LLM offline. Processando resposta via motor analítico local.")
             
             bot_reply = ""
             
             if sql_clean == "NONE" or not sql_clean or "SELECT" not in sql_clean.upper():
-                logger.info(f"[CHAT IA] Planejador retornou NONE. Executando fallback.")
-                fallback_prompt = CHAT_SYSTEM_PROMPT
-                if contexto_conversacao:
-                    fallback_prompt += f"\n\n**CONTEXTO DE HISTÓRICO DA CONVERSA:**\n{contexto_conversacao}"
-                bot_reply = await self._chat_fallback(user_query, fallback_prompt, year_context)
+                if getattr(self.llm, "is_available", True):
+                    fallback_prompt = CHAT_SYSTEM_PROMPT
+                    if contexto_conversacao:
+                        fallback_prompt += f"\n\n**CONTEXTO DE HISTÓRICO DA CONVERSA:**\n{contexto_conversacao}"
+                    bot_reply = await self._chat_fallback(user_query, fallback_prompt, year_context)
+                else:
+                    bot_reply = self._generate_local_db_answer(user_query, year_context)
             else:
                 logger.info(f"[CHAT IA] Query planejada: {sql_clean}")
                 try:
@@ -1220,19 +1226,23 @@ Elabore um relatório de inteligência operacional executivo bem formatado em Ma
                     if contexto_conversacao:
                         answer_prompt += f"\n\n**CONTEXTO DE HISTÓRICO DA CONVERSA:**\n{contexto_conversacao}"
                     
-                    bot_reply = await self.llm.chat(
-                        user_message=user_query,
-                        system_prompt=answer_prompt
-                    )
+                    if getattr(self.llm, "is_available", True):
+                        bot_reply = await self.llm.chat(
+                            user_message=user_query,
+                            system_prompt=answer_prompt
+                        )
                     if not bot_reply or len(bot_reply.strip()) == 0:
-                        logger.warning("[CHAT IA] Resposta do LLM veio vazia. Acionando fallback local...")
+                        logger.info("[CHAT IA] Resposta formatada via gerador local de banco.")
                         bot_reply = self._generate_local_db_answer(user_query, year_context)
                 except Exception as sql_err:
                     logger.error(f"[CHAT IA] Erro ao executar SQL: {sql_err}")
-                    fallback_prompt = CHAT_SYSTEM_PROMPT
-                    if contexto_conversacao:
-                        fallback_prompt += f"\n\n**CONTEXTO DE HISTÓRICO DA CONVERSA:**\n{contexto_conversacao}"
-                    bot_reply = await self._chat_fallback(user_query, fallback_prompt, year_context)
+                    if getattr(self.llm, "is_available", True):
+                        fallback_prompt = CHAT_SYSTEM_PROMPT
+                        if contexto_conversacao:
+                            fallback_prompt += f"\n\n**CONTEXTO DE HISTÓRICO DA CONVERSA:**\n{contexto_conversacao}"
+                        bot_reply = await self._chat_fallback(user_query, fallback_prompt, year_context)
+                    else:
+                        bot_reply = self._generate_local_db_answer(user_query, year_context)
             
             # 6. Salvar resposta da IA no banco
             bot_msg_id = uuid.uuid4().hex
@@ -1286,45 +1296,45 @@ Elabore um relatório de inteligência operacional executivo bem formatado em Ma
                 role_lbl = "Usuário" if r['role'] == 'user' else "IA SaneaIA"
                 historico_completo += f"{role_lbl}: {r['content']}\n"
                 
-            prompt_sumario = f"""
-            Você é um orquestrador de memória para um agente de saneamento. Sua tarefa é ler o histórico completo da conversa e atualizar o resumo consolidado existente.
-            O novo resumo deve descrever de forma compacta (máximo 150 palavras):
-            - O objetivo ou problema que o usuário está investigando (bairros, POP, conformidade, etc)
-            - Dados relevantes encontrados
-            - Decisões, acordos ou planos operacionais sugeridos
+            new_summary = ""
+            if getattr(self.llm, "is_available", True):
+                prompt_sumario = f"""
+                Você é um orquestrador de memória para um agente de saneamento. Sua tarefa é ler o histórico completo da conversa e atualizar o resumo consolidado existente.
+                O novo resumo deve descrever de forma compacta (máximo 150 palavras):
+                - O objetivo ou problema que o usuário está investigando (bairros, POP, conformidade, etc)
+                - Dados relevantes encontrados
+                - Decisões, acordos ou planos operacionais sugeridos
+                
+                HISTÓRICO COMPLETO DA CONVERSA:
+                {historico_completo}
+                
+                Resumo anterior (se houver):
+                {old_summary}
+                
+                Retorne APENAS o novo resumo consolidado em texto simples, sem introduções ou cercas de código.
+                """
+                
+                new_summary = await self.llm.chat(
+                    user_message="Gere o resumo atualizado.",
+                    system_prompt=prompt_sumario
+                )
+                new_summary = new_summary.strip()
             
-            HISTÓRICO COMPLETO DA CONVERSA:
-            {historico_completo}
-            
-            Resumo anterior (se houver):
-            {old_summary}
-            
-            Retorne APENAS o novo resumo consolidado em texto simples, sem introduções ou cercas de código.
-            """
-            
-            new_summary = await self.llm.chat(
-                user_message="Gere o resumo atualizado.",
-                system_prompt=prompt_sumario
-            )
-            
-            new_summary = new_summary.strip()
             if not new_summary:
-                logger.warning(f"[CHAT IA] Resposta de resumo vazia do LLM. Usando fallback local.")
                 if historico_completo:
                     linhas_hist = [l.strip() for l in historico_completo.split('\n') if l.strip()]
                     primeiras = " | ".join(linhas_hist[:3])
-                    new_summary = f"Fallback: Investigação de histórico. ({primeiras[:100]})"
+                    new_summary = f"Memória Operacional: {primeiras[:100]}"
                 else:
-                    new_summary = "Fallback: Conversa iniciada sobre operações de saneamento."
+                    new_summary = "Atendimento iniciado sobre operações de saneamento."
             
-            if new_summary:
-                now_str = datetime.now(timezone.utc).isoformat()
-                cursor.execute(
-                    "UPDATE conversation_memory SET summary = ?, updated_at = ? WHERE conversation_id = ?",
-                    (new_summary, now_str, conversation_id)
-                )
-                conn.commit()
-                logger.info(f"[CHAT IA] Memória atualizada com sucesso para {conversation_id}")
+            now_str = datetime.now(timezone.utc).isoformat()
+            cursor.execute(
+                "UPDATE conversation_memory SET summary = ?, updated_at = ? WHERE conversation_id = ?",
+                (new_summary, now_str, conversation_id)
+            )
+            conn.commit()
+            logger.info(f"[CHAT IA] Memória atualizada com sucesso para {conversation_id}")
             conn.close()
         except Exception as e:
             logger.error(f"[CHAT IA] Erro ao atualizar memória assíncrona: {e}")
